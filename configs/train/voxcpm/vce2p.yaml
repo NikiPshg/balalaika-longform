@@ -1,0 +1,29 @@
+# VC-E2P: VoxCPM2-2B full SFT on the short_punct windows (negative control, budget-matched).
+# Same local runner + env as vce3p.yaml.
+pretrained_path: models/voxcpm2
+train_manifest: data/train/voxcpm/vce2p.jsonl
+val_manifest: data/train/voxcpm/dev_short.jsonl
+sample_rate: 16000
+out_sample_rate: 48000
+batch_size: 4
+grad_accum_steps: 18          # 72 windows/step x mean 21.540 s = 1550.9 s/step
+num_workers: 1               # owner/Lead ruling 2026-09-06 (A23): host-RAM budget on the shared 62-GB host (foreign
+                              # processes ~37-50 GB); was 4. Batch order/composition is sampler-determined
+                              # (RandomSampler on the global torch RNG, seed 0 via Accelerator) and independent
+                              # of the worker count (handoff A22 R6 / decisions 2026-09-05), so the run stays
+                              # a clean seed-0 replica of the planned schedule; only data-loading throughput changes.
+num_iters: 1185               # 85320 window-forwards = 3.0014 passes over 28427 windows
+log_interval: 10
+valid_interval: 300
+save_interval: 311            # staggered vs vce3p (disk-peak decorrelation, as in E10)
+learning_rate: 0.00001
+weight_decay: 0.01
+warmup_steps: 59              # 5% of 1185 steps (series convention, Lead greenlight 2026-09-02)
+max_steps: 1185
+max_batch_tokens: 8192        # max_sample_len = 8192/6 = 1365 >> max window packed len 542: no drops
+max_grad_norm: 1.0
+save_path: exp/voxcpm/vce2p
+tensorboard: exp/voxcpm/vce2p/tb
+lambdas:
+  loss/diff: 1.0
+  loss/stop: 1.0

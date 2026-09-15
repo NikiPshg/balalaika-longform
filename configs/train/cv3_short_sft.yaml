@@ -1,0 +1,287 @@
+# A6 SFT recipe (E2 Short-SFT). Copy of ~/CosyVoice/examples/balalaika/cosyvoice3/conf/cosyvoice3.yaml
+# 2026-08-29 Lead: short cap corrected 17000 -> 20700 BEFORE any short step was used: measured long-arm mean on the
+# first 200 pilot steps = 20060 target tokens/step (budget_verify_step200.json); short packs ~97 % of its cap.
+# (repo 074ca6d) with the changes listed below. THE TWO ARM CONFIGS ARE IDENTICAL BELOW THIS HEADER
+# EXCEPT ONE LINE -- token_batch.max_speech_tokens_in_batch (item 4). That single asymmetry, and the
+# frozen values 22500 / 20700 / 28672 / mix_ratio [5, 1000000], are asserted by
+# tests/test_training_configs.py, so a silent edit fails the test suite. Everything else is identical
+# and the arm is selected only by --train_data/--cv_data.
+#
+# Changes vs the stock recipe (items 1-3, 5, 6 applied identically to both arms; item 4 is the one
+# intended asymmetry -- see reports/training_budget_comparison.md):
+#   1. llm.mix_ratio [5, 1000000]: the bistream (interleaved 5 text : 15 speech + fill tokens) branch of
+#      CosyVoice3LM.prepare_lm_input_target is never taken -> every sample is trained in the unistream layout
+#      sos + instruct + text + task_id + speech + eos, which is the layout of native (non-streaming) inference.
+#      ACCEPTED by the Lead 2026-08-28 (reports/decisions.md, "ПРИНЯТО PROPOSED A6" (1)): unistream only
+#      for BOTH arms, because the benchmark is non-streaming native inference; the deviation from the stock
+#      50 % bistream mix is identical for E2 and E3 and is reported as a deviation. Revert to [5, 15] to
+#      restore the stock mix (that would be a new Lead decision, not an edit).
+#   2. data_pipeline: parquet rows already carry offline speech tokens (src/training/make_parquet_arms.py), so
+#      filter/resample/compute_fbank/parse_embedding/compute_whisper_fbank/sort/batch/padding are replaced by
+#      src.training.processor_ext.{budget_check, sort_by_tokens, token_batch, padding_llm}:
+#        - budget_check RAISES on any sample outside the context budget (no silent drop; PLAN §4.2/§11.2);
+#        - token_batch is token-based (PLAN §11.3): <= max_speech_tokens_in_batch target tokens per micro-batch
+#          and <= max_padded_positions padded LM positions (memory guard);
+#      the stock `filter` limits are kept below ONLY as documentation of what a 15-min unit needs.
+#   3. train_conf: SFT optimizer settings (lr 1e-5 as the stock comment recommends for sft, linear warmup then
+#      constant), max_steps driven, save_per_step for dev-loss checkpoints.
+#   4. token_batch.max_speech_tokens_in_batch -- THE ONLY INTENDED DIFFERENCE BETWEEN THE ARMS.
+#      Lead decision 2026-08-28 (reports/decisions.md), budget-matching variant (b): long = 22500 target
+#      tokens/step (= one 15-min unit, 900 s x 25 Hz, and the VRAM limit), short = 20700. Reason: a 13-15 min
+#      unit cannot share a micro-batch with another one, so with an equal cap the long arm packed only ~75 %
+#      of it (mean 16 960 tokens/step) against ~93 % for the short arm (mean 20 868), i.e. equal optimizer
+#      steps would have given the long arm ~19 % fewer target tokens (measured on the 2 % subset, 100 steps).
+#      The lower short cap makes equal steps give equal MEAN target tokens/step within +-3 %; the Lead
+#      requires this to be verified on the FIRST 200 STEPS of the pilot of both arms and recorded in
+#      reports/training_budget_comparison.md:
+#          scripts/train_arm.sh <arm> --verify_budget 200 ...      (per run, prints the mean)
+#          scripts/check_budget_match.py exp/long/<tag> exp/short/<tag> --steps 200   (exit != 0 outside +-3 %)
+#   5. token_batch.max_padded_positions 32768 -> 28672 in BOTH arms (Lead decision 2026-08-28). The long
+#      smoke reserved 46.9 GB of the 48 GB card at the old guard; a 15-min unit needs 28 087 padded positions,
+#      so 28 672 loses no sample. Paired with PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True, exported by
+#      scripts/train_arm.sh for both arms. The guard only limits padding waste inside a micro-batch: a single
+#      sample always forms a valid batch (processor_ext.token_batch), so nothing is ever silently dropped.
+#   6. Frozen values (any change needs a new line in reports/decisions.md): mix_ratio [5, 1000000];
+#      max_speech_tokens_in_batch 22500 (long) / 20700 (short); max_padded_positions 28672 (both);
+#      context_limit 32768; margin 1024; accum_grad 1.
+
+# set random seed, so that you may reproduce your result.
+__set_seed1: !apply:random.seed [1986]
+__set_seed2: !apply:numpy.random.seed [1986]
+__set_seed3: !apply:torch.manual_seed [1986]
+__set_seed4: !apply:torch.cuda.manual_seed_all [1986]
+
+# fixed params
+sample_rate: 24000
+llm_input_size: 896
+llm_output_size: 896
+spk_embed_dim: 192
+qwen_pretrain_path: ''
+token_frame_rate: 25
+token_mel_ratio: 2
+
+# stream related params
+chunk_size: 25 # streaming inference chunk size, in token
+num_decoding_left_chunks: -1 # streaming inference flow decoder left chunk size, <0 means use all left chunks
+
+# model params
+# for all class/function included in this repo, we use !<name> or !<new> for intialization, so that user may find all corresponding class/function according to one single yaml.
+# for system/third_party class/function, we do not require this.
+llm: !new:cosyvoice.llm.llm.CosyVoice3LM
+    llm_input_size: !ref <llm_input_size>
+    llm_output_size: !ref <llm_output_size>
+    speech_token_size: 6561
+    length_normalized_loss: True
+    lsm_weight: 0
+    mix_ratio: [5, 1000000]   # A6/Lead 2026-08-28: unistream-only (stock [5, 15]); see header item 1
+    llm: !new:cosyvoice.llm.llm.Qwen2Encoder
+        pretrain_path: !ref <qwen_pretrain_path>
+    sampling: !name:cosyvoice.utils.common.ras_sampling
+        top_p: 0.8
+        top_k: 25
+        win_size: 10
+        tau_r: 0.1
+
+flow: !new:cosyvoice.flow.flow.CausalMaskedDiffWithDiT
+    input_size: 80
+    output_size: 80
+    spk_embed_dim: !ref <spk_embed_dim>
+    output_type: 'mel'
+    vocab_size: 6561
+    input_frame_rate: !ref <token_frame_rate>
+    only_mask_loss: True
+    token_mel_ratio: !ref <token_mel_ratio>
+    pre_lookahead_len: 3
+    pre_lookahead_layer: !new:cosyvoice.transformer.upsample_encoder.PreLookaheadLayer
+        in_channels: 80
+        channels: 1024
+        pre_lookahead_len: 3
+    decoder: !new:cosyvoice.flow.flow_matching.CausalConditionalCFM
+        in_channels: 240
+        n_spks: 1
+        spk_emb_dim: 80
+        cfm_params: !new:omegaconf.DictConfig
+            content:
+                sigma_min: 1e-06
+                solver: 'euler'
+                t_scheduler: 'cosine'
+                training_cfg_rate: 0.2
+                inference_cfg_rate: 0.7
+                reg_loss_type: 'l1'
+        estimator: !new:cosyvoice.flow.DiT.dit.DiT
+            dim: 1024
+            depth: 22
+            heads: 16
+            dim_head: 64
+            ff_mult: 2
+            mel_dim: 80
+            mu_dim: 80
+            spk_dim: 80
+            out_channels: 80
+            static_chunk_size: !ref <chunk_size> * <token_mel_ratio>
+            num_decoding_left_chunks: !ref <num_decoding_left_chunks>
+
+hift: !new:cosyvoice.hifigan.generator.CausalHiFTGenerator
+    in_channels: 80
+    base_channels: 512
+    nb_harmonics: 8
+    sampling_rate: !ref <sample_rate>
+    nsf_alpha: 0.1
+    nsf_sigma: 0.003
+    nsf_voiced_threshold: 10
+    upsample_rates: [8, 5, 3]
+    upsample_kernel_sizes: [16, 11, 7]
+    istft_params:
+        n_fft: 16
+        hop_len: 4
+    resblock_kernel_sizes: [3, 7, 11]
+    resblock_dilation_sizes: [[1, 3, 5], [1, 3, 5], [1, 3, 5]]
+    source_resblock_kernel_sizes: [7, 7, 11]
+    source_resblock_dilation_sizes: [[1, 3, 5], [1, 3, 5], [1, 3, 5]]
+    lrelu_slope: 0.1
+    audio_limit: 0.99
+    conv_pre_look_right: 4
+    f0_predictor: !new:cosyvoice.hifigan.f0_predictor.CausalConvRNNF0Predictor
+        num_class: 1
+        in_channels: 80
+        cond_channels: 512
+
+# gan related module
+mel_spec_transform1: !name:matcha.utils.audio.mel_spectrogram
+    n_fft: 1920
+    num_mels: 80
+    sampling_rate: !ref <sample_rate>
+    hop_size: 480
+    win_size: 1920
+    fmin: 0
+    fmax: null
+    center: False
+hifigan: !new:cosyvoice.hifigan.hifigan.HiFiGan
+    generator: !ref <hift>
+    discriminator: !new:cosyvoice.hifigan.discriminator.MultipleDiscriminator
+        mpd: !new:matcha.hifigan.models.MultiPeriodDiscriminator
+        mrd: !new:cosyvoice.hifigan.discriminator.MultiResSpecDiscriminator
+    mel_spec_transform: [
+        !ref <mel_spec_transform1>
+    ]
+
+# processor functions
+parquet_opener: !name:cosyvoice.dataset.processor.parquet_opener
+get_tokenizer: !name:cosyvoice.tokenizer.tokenizer.get_qwen_tokenizer
+    token_path: !ref <qwen_pretrain_path>
+    skip_special_tokens: True
+    version: cosyvoice3
+allowed_special: 'all'
+tokenize: !name:cosyvoice.dataset.processor.tokenize
+    get_tokenizer: !ref <get_tokenizer>
+    allowed_special: !ref <allowed_special>
+# NOT in data_pipeline (replaced by budget_check). Values a 15-min unit would need in the stock filter:
+# max_length = 900 s x 100 frames/s = 90000 (+100 slack); token_max_length = max text tokens in train_long (4646) -> 5000.
+filter: !name:cosyvoice.dataset.processor.filter
+    max_length: 90100
+    min_length: 100
+    token_max_length: 5000
+    token_min_length: 1
+resample: !name:cosyvoice.dataset.processor.resample
+    resample_rate: !ref <sample_rate>
+truncate: !name:cosyvoice.dataset.processor.truncate
+    truncate_length: 24960 # must be a multiplier of hop_size and token_mel_ratio
+feat_extractor: !name:matcha.utils.audio.mel_spectrogram
+    n_fft: 1920
+    num_mels: 80
+    sampling_rate: !ref <sample_rate>
+    hop_size: 480
+    win_size: 1920
+    fmin: 0
+    fmax: null
+    center: False
+compute_fbank: !name:cosyvoice.dataset.processor.compute_fbank
+    feat_extractor: !ref <feat_extractor>
+    num_frames: 960
+compute_whisper_fbank: !name:cosyvoice.dataset.processor.compute_whisper_fbank
+    num_frames: 960
+compute_f0: !name:cosyvoice.dataset.processor.compute_f0
+    sample_rate: !ref <sample_rate>
+    hop_size: 480
+parse_embedding: !name:cosyvoice.dataset.processor.parse_embedding
+    normalize: True
+shuffle: !name:cosyvoice.dataset.processor.shuffle
+    shuffle_size: 1000
+sort: !name:cosyvoice.dataset.processor.sort
+    sort_size: 500  # sort_size should be less than shuffle_size
+batch: !name:cosyvoice.dataset.processor.batch
+    batch_type: 'dynamic'
+    max_frames_in_batch: 2000
+padding: !name:cosyvoice.dataset.processor.padding
+    use_spk_embedding: False # change to True during sft
+
+# ---- A6 processors (src/training/processor_ext.py) ----
+budget_check: !name:src.training.processor_ext.budget_check
+    context_limit: 32768      # CosyVoice-BlankEN max_position_embeddings
+    margin: 1024              # frozen safety margin (src/training/context_budget.py)
+sort_by_tokens: !name:src.training.processor_ext.sort_by_tokens
+    sort_size: 500
+token_batch: !name:src.training.processor_ext.token_batch
+    max_speech_tokens_in_batch: 20700   # Lead 2026-08-28: short cap, budget matching (b); see header item 4
+    max_padded_positions: 28672         # Lead 2026-08-28: longest padded seq x batch size (VRAM guard);
+                                        # was 32768, a 15-min unit needs 28087 -> nothing is lost. Header item 5.
+padding_llm: !name:src.training.processor_ext.padding_llm
+    mode: 'train'
+
+
+# dataset processor pipeline
+data_pipeline: [
+    !ref <parquet_opener>,
+    !ref <tokenize>,
+    !ref <budget_check>,
+    !ref <shuffle>,
+    !ref <sort_by_tokens>,
+    !ref <token_batch>,
+    !ref <padding_llm>,
+]
+data_pipeline_gan: [
+    !ref <parquet_opener>,
+    !ref <tokenize>,
+    !ref <filter>,
+    !ref <resample>,
+    !ref <truncate>,
+    !ref <compute_fbank>,
+    !ref <compute_f0>,
+    !ref <parse_embedding>,
+    !ref <shuffle>,
+    !ref <sort>,
+    !ref <batch>,
+    !ref <padding>,
+]
+
+# llm flow train conf
+train_conf:
+    optim: adam
+    optim_conf:
+        lr: 1e-5            # stock comment: "change to 1e-5 during sft"
+    scheduler: constantlr   # + linear warmup below (A6 train.py copy); stock constantlr has no warmup
+    scheduler_conf:
+        warmup_steps: 2500  # unused by constantlr (kept from stock)
+    warmup_steps: 50        # A6: linear warmup steps before the constant lr
+    max_epoch: 1000         # bounded by max_steps, not epochs
+    max_steps: 1000         # default; overridden by --max_steps on the command line
+    grad_clip: 5
+    accum_grad: 1           # token-based micro-batch already = effective batch (<= max_speech_tokens_in_batch)
+    log_interval: 10
+    save_per_step: 200      # CV (dev loss) + checkpoint every 200 optimizer steps
+
+# gan train conf
+train_conf_gan:
+    optim: adam
+    optim_conf:
+        lr: 0.000002 # use small lr for gan training
+    scheduler: constantlr
+    optim_d: adam
+    optim_conf_d:
+        lr: 0.000002 # use small lr for gan training
+    scheduler_d: constantlr
+    max_epoch: 20
+    grad_clip: 5
+    accum_grad: 1 # in gan training, accum_grad must be 1
+    log_interval: 100
+    save_per_step: -1

@@ -1,0 +1,63 @@
+# Frozen Qwen3-TTS baseline configuration (A10-qwen, 2026-08-31). E10 prereg,
+# reports/decisions.md 2026-08-31. Every value below was read from the pinned snapshot /
+# the owner's fork; citations in src/adapters/qwen3tts.py. Do not edit without a
+# decisions.md entry.
+
+model:
+  model_id: Qwen/Qwen3-TTS-12Hz-1.7B-Base
+  model_revision: fd4b254389122332181a7c3db7f27e918eec64e3     # prereg E10 pinned base
+  model_dir: models/qwen3-tts
+  fork_root: third_party/Qwen3-TTS                     # bitmanager/Qwen3-TTS-streaming-custom@trl-trainer
+  venv_python: third_party/Qwen3-TTS/lora_finetuning/.venv/bin/python  # uv sync --locked (lora_finetuning/uv.lock)
+  weights: base
+  dtype: bfloat16              # upstream examples load bf16; flash-attn not installed -> sdpa
+  attn_implementation: sdpa
+  max_position_embeddings: 32768   # config.json talker_config (the model HARD limit)
+  codec_eos_token_id: 2150         # config.json talker_config
+  num_code_groups: 16              # slow talker codebook 0 + fast code predictor books 1..15
+  codec_frame_hz: 12.5             # 24000 Hz / decode_upsample_rate 1920 (speech_tokenizer/config.json)
+  sample_rate: 24000
+
+# Stock sampling, verbatim from the snapshot's generation_config.json; asserted equal at
+# load time (qwen3tts.check_generate_defaults). The adapter passes ONLY max_new_tokens
+# explicitly; every sampling knob resolves from these model defaults.
+generation:
+  language: Russian            # trl SFT default (sft_streaming_main_talker_full.py:97) and
+                               # the fork's production ru mapping (server_qwen_custom_vllm.py:305)
+  x_vector_only_mode: false    # ICL voice clone: ref audio + ref transcript (mirror of CosyVoice zero-shot)
+  non_streaming_mode: false    # the model's canonical input layout; identical to the layout the
+                               # fork teacher-forces in SFT (main_talker_training.py:316) and uses
+                               # for validation generation (main_talker_training.py:623). ONE
+                               # trajectory either way; no text chunking in this path.
+  do_sample: true              # generation_config.json (frozen copy; informational)
+  top_k: 50
+  top_p: 1.0
+  temperature: 0.9
+  repetition_penalty: 1.05
+  subtalker_dosample: true
+  subtalker_top_k: 50
+  subtalker_top_p: 1.0
+  subtalker_temperature: 0.9
+  model_default_max_new_tokens: 8192   # shipped DEFAULT cap (= 655 s at 12.5 Hz), NOT a model
+                                       # limit; the adapter overrides it per item (E10: no caps
+                                       # beyond the model's own hard limits + the same 20-min
+                                       # operational watchdog the CosyVoice arms run with)
+  watchdog:
+    enabled: true
+    max_generated_tokens: 15000        # operational cap = 20 min of speech at 12.5 Hz (> 15 min
+                                       # study ceiling; mirrors cosyvoice3_base.yaml 30000 @ 25 Hz);
+                                       # hitting it = loop_cap
+    max_wall_seconds: null             # recorded only: HF generate() is atomic, no in-flight
+                                       # interruption (documented deviation from CosyVoice watchdog)
+    enforce_context_budget: true       # max_new_tokens <= 32768 - margin - measured input prefix;
+                                       # hitting that bound = context_limit
+    context_safety_margin_tokens: 8
+    expected_tokens_per_text_token: 2.0  # only for the length_hint field (~12.5 Hz / ~6.5 text tok/s)
+
+seeds: [0]
+
+output:
+  sample_rate: 24000
+  wav_subtype: PCM_16
+  never_overwrite: true
+  save_generated_token_ids: true       # codebook-0 token dump per item (.tokens.json)

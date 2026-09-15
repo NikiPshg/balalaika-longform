@@ -1,0 +1,102 @@
+# Frozen recipe for the E11 «Short-tail buckets» benchmark (reports/decisions.md
+# 2026-08-31, «ПРЕРЕГИСТРАЦИЯ E11 "Short-tail buckets"»).  Owner: A11-short.
+#
+# Implementation: src/benchmark/build_short_tail.py ->
+#   data/benchmark/short_tail_pilot.jsonl + data/benchmark/short_tail_robust.jsonl
+#   data/benchmark/short_tail_stats.json
+#   reports/benchmark_short_tail_composition.md
+#
+# Text rules are NOT redefined here: the builder loads configs/benchmark_pilot.yaml
+# and reuses its frozen `dataset_roots` (prefix_start, latin table, selection window,
+# timestamp source), `tokenizer`, `context_occupancy`, `normalization` and the
+# charset-S1 implementation in src/benchmark/disfluency.py verbatim, exactly the way
+# build_robust.py does.  The ONLY new geometry is the two short buckets and the
+# floating-span cut (a span may start at ANY sentence boundary at or after the frozen
+# prefix start, because the no-overlap guard below forbids re-using the nested-prefix
+# region the frozen benchmarks already occupy).
+version: 1
+frozen_at: "2026-08-31"
+owner: A11-short
+decision_ref: "reports/decisions.md 2026-08-31 «ПРЕРЕГИСТРАЦИЯ E11 Short-tail buckets»"
+pilot_rules: configs/benchmark_pilot.yaml
+robust_rules: configs/benchmark_robust.yaml
+
+# Bucket = HUMAN duration of the cut span (same principle as PLAN §7.1).  S* names
+# leave the frozen B0-B4 grid untouched (E11 prereg).
+buckets:
+  S0: [0, 3]
+  S1: [3, 20]
+
+constraints:
+  # scripts/run_evaluation.py (frozen contract) refuses any human slice shorter than
+  # MIN_HUMAN_SLICE_SEC = 1.0 s, so a dataset-root S0 span must be >= 1 s; the S0
+  # bucket definition stays [0, 3] (prereg), the floor is an evaluator constraint.
+  min_human_slice_sec: 1.0
+  # S0 = one short clause/sentence; S1 = 1-3 sentences (E11 task).  Enforced on the
+  # §7.5 `sentences` field (bp.n_sentences of the finalized text) AND structurally
+  # (span ends at the 1st / 1st-3rd sentence boundary after its start).
+  s0_sentences: [1, 1]
+  s1_sentences: [1, 3]
+  # E11 task wording: S0 = «1 short clause/sentence (typically 3-8 words)».  A
+  # PREFERENCE, not a gate: candidates with 3-8 words win over shorter/longer ones
+  # (a 1-word ASR fragment like «Недели.» is a legal sentence but its WER quantum is
+  # 100 pp); when no unit of a root/voice offers a 3-8-word span the nearest-centre
+  # rule falls back to any clean 1-sentence span.
+  s0_preferred_words: [3, 8]
+  # the shared 3-s edge belongs to S0 (S1 is lo-exclusive), so no span can satisfy
+  # both buckets at once
+  s1_lo_exclusive: true
+  # the cut inside the chosen unit/root is the span nearest the bucket centre
+  # (pilot's frozen prefix_cut rule, generalised to floating spans); ties by the
+  # earliest start group, then the earliest end group
+  span_cut: nearest_to_bucket_centre
+
+pilot_set:
+  # the SAME 6 roots as the frozen pilot: 4 dataset roots (dev) + 2 external
+  # documents, 1 item per bucket per root where the guards leave material; texts are
+  # generated with the same 2 pilot voices (ref_female_01 / ref_male_01), so the
+  # target is 12 texts x 2 voices = 24 generations per checkpoint.
+  source_benchmark: data/benchmark/pilot.jsonl
+  source_manifest: data/manifests/dev.jsonl
+  # external documents: the pilot's frozen rule (first sentence(s) from the document
+  # start, duration estimated with the SAME dev-median-wpm constant, human_* null,
+  # human_duration_source = estimate, no ASR floor), plus the sentence-count caps
+  # above.  Nested prefixes are the frozen external design and are exempt from the
+  # span guard (no sample_id, no time axis).
+  external_from_pilot: true
+
+robust_set:
+  # the 13 frozen Robust-20 voices, 1 item per bucket per voice from that voice's
+  # OWN units -> target 26 texts, generated with --per-item-voices.
+  source_benchmark: data/benchmark/robust.jsonl
+  source_stats: data/benchmark/robust_stats.json
+  references: data/references/references_robust.jsonl
+  manifests: [data/manifests/dev.jsonl, data/manifests/test.jsonl]
+  # unit gates verbatim from configs/benchmark_robust.yaml `texts:`
+  # (min consistency 90, single speaker, hidden excluded, reference unit of the
+  # voice provides NO text); scarce bucket first, robust's frozen unit ordering.
+  bucket_order_for_assignment: [S0, S1]
+  unit_rank: [prefer_unused_unit, filler_density, sample_id]
+
+# E11 guard (task 2026-08-31): a short-tail span may not intersect ANY span already
+# used by the frozen benchmarks -- checked by sample_id + time-range intersection
+# against pilot.jsonl and robust.jsonl (their human_offset ranges), against every
+# reference window (references.jsonl + references_robust.jsonl), and the sealed
+# hidden set's sample_ids are excluded ENTIRELY.  The two new files are also
+# disjoint from each other.  A root/voice whose material is exhausted by the guard
+# is reported as a GAP, never filled by weakening a rule.
+overlap_guard:
+  exclude_spans_of: [data/benchmark/pilot.jsonl, data/benchmark/robust.jsonl]
+  exclude_sample_ids_of: data/benchmark/hidden.jsonl     # entirely
+  exclude_reference_windows_of:
+  - data/references/references.jsonl
+  - data/references/references_robust.jsonl
+  self_disjoint: true
+
+# same machinery and thresholds as the robust benchmark (build_robust.train_leakage)
+leakage_check:
+  shingle_n: 8
+  max_jaccard: 0.05
+  against: [data/manifests/train_long.jsonl, data/manifests/train_short.jsonl]
+  fields: [text, text_e2e]
+  normalize: lenient

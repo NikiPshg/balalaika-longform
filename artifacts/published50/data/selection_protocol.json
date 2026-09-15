@@ -1,0 +1,595 @@
+{
+  "version": "limited50-existing-pairs-metadata-subset-v1",
+  "created_at_utc": "2026-09-13T22:26:24.951399+00:00",
+  "selection_before_tts": false,
+  "selection_before_any_tts": false,
+  "timing_disclosure": "The user changed the evaluation budget to 50 examples with a 12-hour deadline after seeing Base/Short summaries and Long-run progress. This subset was selected after those observations; it is not a pre-TTS selection.",
+  "selection_rule_uses_outcomes": false,
+  "selector_input_restriction": "Only the original frozen benchmark metadata, references metadata, and original freeze JSON were read. No TTS output, ASR result, metric, runtime, completion status, or generated-audio duration informed selection.",
+  "original_inputs": {
+    "benchmark.jsonl": {
+      "path": "artifacts/expanded_source/data/text_only_v3/benchmark.jsonl",
+      "sha256": "879410e084005514718eeb70432c6c7c8c37cb2ebdd78983b15feee34072630b"
+    },
+    "references.jsonl": {
+      "path": "artifacts/expanded_source/data/text_only_v3/references.jsonl",
+      "sha256": "b4abebf8a8916628ec77fe07f604c6f5a0ed7a484cc6554cf97f5e5b34d8b827"
+    },
+    "FINAL_FREEZE.json": {
+      "path": "artifacts/expanded_source/data/text_only_v3/FINAL_FREEZE.json",
+      "sha256": "e9528fb8dc508c003c60404a9e1ee594fd7b8be973275a43d64e60eae29f2d30"
+    }
+  },
+  "rule": [
+    "Fix one root per work using the smallest existing candidate_rank_hash, then root_id as a tie-break.",
+    "Select exactly one of its two existing B4 voice pairs for each of the 22 works.",
+    "Select 14 existing B0 and 14 existing B2 pairs only from those same 22 roots.",
+    "Keep all 21 voices; require new/previously-evaluated cohort counts of 11/11 for B4 and 7/7 for both B0 and B2.",
+    "Minimize the sum of squared per-voice example counts to balance use within the fixed 25/25 cohort totals.",
+    "Among equal balance optima, prefer inclusion in lexicographic order of existing candidate_rank_hash, bucket order B4/B0/B2, SHA256(existing pair_id), pair_id, fixing each decision only after feasibility is established.",
+    "Write selected original JSONL lines byte-for-byte in their original order, and copy all original reference records byte-for-byte."
+  ],
+  "fixed_roots_by_work": {
+    "Poezdka_Polesye_librivox": "txt_0140c5a73c9c238f",
+    "afanasyev_russian_fairy_tales": "txt_09e378f20c86d4d3",
+    "aykhenvald_silhouettes_russian_writers": "txt_0092117b464dd5c6",
+    "belkintales_1406_librivox": "txt_00acc224d8c35fb2",
+    "carousel_2511_librivox": "txt_0069dcb829ef2042",
+    "chortova_kukla_2211_librivox": "txt_00078e19097b0038",
+    "dubrovsky_1411_librivox": "txt_0051c8a28e60303e",
+    "dvoryanskoegnezdo_1906_librivox": "txt_0073929aa16fa69c",
+    "early_short_stories_jabotinsky_1410_librivox": "txt_01207bb9be0a81b6",
+    "icemarch_1507_librivox": "txt_000c98e87137ea11",
+    "leskov_yuletide_stories": "txt_004aa4f5d1de5c70",
+    "matikatya_2304_librivox": "txt_0007e5d9729e811d",
+    "notes_underground_russian": "txt_007df2455dcd1175",
+    "obryv_1906_librivox": "txt_000ab06f56948780",
+    "obyknovennayaistorya_1912_librivox": "txt_000c5bd4ae2508e6",
+    "on_the_edge_of_the_world_1902_librivox": "txt_0093c996cdb12915",
+    "selkuncikimysinyjcar_2210_librivox": "txt_009d072a3add4b66",
+    "skazki_2110_librivox": "txt_05c0d5109b02b4b6",
+    "vekhi_2011_librivox": "txt_027c185438e02d69",
+    "veshnie_vody_1607_librivox": "txt_0082eead47e7a4c5",
+    "white_nights_librivox": "txt_024dd7c0da2425c8",
+    "zapiskiohotnika_2409_librivox": "txt_000f0d5a651d1d26"
+  },
+  "lexicographic_decisions": [
+    {
+      "pair_id": "txt_00078e19097b0038__B4__ref_r05",
+      "included": true
+    },
+    {
+      "pair_id": "txt_00078e19097b0038__B4__ref_lv_2826",
+      "included": false
+    },
+    {
+      "pair_id": "txt_00078e19097b0038__B0__ref_lv_2826",
+      "included": true
+    },
+    {
+      "pair_id": "txt_00078e19097b0038__B2__ref_r05",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0007e5d9729e811d__B4__ref_r11",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0007e5d9729e811d__B4__ref_lv_3056",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0007e5d9729e811d__B0__ref_r11",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0007e5d9729e811d__B2__ref_lv_3056",
+      "included": true
+    },
+    {
+      "pair_id": "txt_000ab06f56948780__B4__ref_lv_5397",
+      "included": true
+    },
+    {
+      "pair_id": "txt_000ab06f56948780__B4__ref_r01",
+      "included": false
+    },
+    {
+      "pair_id": "txt_000ab06f56948780__B0__ref_r01",
+      "included": true
+    },
+    {
+      "pair_id": "txt_000ab06f56948780__B2__ref_lv_5397",
+      "included": true
+    },
+    {
+      "pair_id": "txt_000c5bd4ae2508e6__B4__ref_lv_2826",
+      "included": true
+    },
+    {
+      "pair_id": "txt_000c5bd4ae2508e6__B4__ref_r04",
+      "included": false
+    },
+    {
+      "pair_id": "txt_000c5bd4ae2508e6__B0__ref_lv_2826",
+      "included": true
+    },
+    {
+      "pair_id": "txt_000c5bd4ae2508e6__B2__ref_r04",
+      "included": true
+    },
+    {
+      "pair_id": "txt_000c98e87137ea11__B4__ref_r10",
+      "included": true
+    },
+    {
+      "pair_id": "txt_000c98e87137ea11__B4__ref_lv_4471",
+      "included": false
+    },
+    {
+      "pair_id": "txt_000c98e87137ea11__B0__ref_r10",
+      "included": true
+    },
+    {
+      "pair_id": "txt_000c98e87137ea11__B2__ref_lv_4471",
+      "included": true
+    },
+    {
+      "pair_id": "txt_000f0d5a651d1d26__B4__ref_r01",
+      "included": true
+    },
+    {
+      "pair_id": "txt_000f0d5a651d1d26__B4__ref_lv_5397",
+      "included": false
+    },
+    {
+      "pair_id": "txt_000f0d5a651d1d26__B0__ref_lv_5397",
+      "included": true
+    },
+    {
+      "pair_id": "txt_000f0d5a651d1d26__B2__ref_r01",
+      "included": false
+    },
+    {
+      "pair_id": "txt_004aa4f5d1de5c70__B4__ref_r08",
+      "included": true
+    },
+    {
+      "pair_id": "txt_004aa4f5d1de5c70__B4__ref_lv_5548",
+      "included": false
+    },
+    {
+      "pair_id": "txt_004aa4f5d1de5c70__B0__ref_lv_5548",
+      "included": true
+    },
+    {
+      "pair_id": "txt_004aa4f5d1de5c70__B2__ref_r08",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0051c8a28e60303e__B4__ref_lv_2826",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0051c8a28e60303e__B4__ref_r12",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0051c8a28e60303e__B0__ref_r12",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0051c8a28e60303e__B2__ref_lv_2826",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0069dcb829ef2042__B4__ref_lv_2671",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0069dcb829ef2042__B4__ref_r10",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0069dcb829ef2042__B0__ref_r10",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0069dcb829ef2042__B2__ref_lv_2671",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0073929aa16fa69c__B4__ref_r03",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0073929aa16fa69c__B4__ref_lv_4091",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0073929aa16fa69c__B0__ref_lv_4091",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0073929aa16fa69c__B2__ref_r03",
+      "included": true
+    },
+    {
+      "pair_id": "txt_007df2455dcd1175__B4__ref_lv_4471",
+      "included": true
+    },
+    {
+      "pair_id": "txt_007df2455dcd1175__B4__ref_r11",
+      "included": false
+    },
+    {
+      "pair_id": "txt_007df2455dcd1175__B0__ref_lv_4471",
+      "included": true
+    },
+    {
+      "pair_id": "txt_007df2455dcd1175__B2__ref_r11",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0082eead47e7a4c5__B4__ref_lv_4471",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0082eead47e7a4c5__B4__ref_r02",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0082eead47e7a4c5__B0__ref_lv_4471",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0082eead47e7a4c5__B2__ref_r02",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0092117b464dd5c6__B4__ref_lv_5548",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0092117b464dd5c6__B4__ref_r04",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0092117b464dd5c6__B0__ref_lv_5548",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0092117b464dd5c6__B2__ref_r04",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0093c996cdb12915__B4__ref_lv_5397",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0093c996cdb12915__B4__ref_r05",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0093c996cdb12915__B0__ref_r05",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0093c996cdb12915__B2__ref_lv_5397",
+      "included": false
+    },
+    {
+      "pair_id": "txt_009d072a3add4b66__B4__ref_r07",
+      "included": true
+    },
+    {
+      "pair_id": "txt_009d072a3add4b66__B4__ref_lv_3056",
+      "included": false
+    },
+    {
+      "pair_id": "txt_009d072a3add4b66__B0__ref_lv_3056",
+      "included": false
+    },
+    {
+      "pair_id": "txt_009d072a3add4b66__B2__ref_r07",
+      "included": true
+    },
+    {
+      "pair_id": "txt_00acc224d8c35fb2__B4__ref_r09",
+      "included": true
+    },
+    {
+      "pair_id": "txt_00acc224d8c35fb2__B4__ref_lv_2671",
+      "included": false
+    },
+    {
+      "pair_id": "txt_00acc224d8c35fb2__B0__ref_r09",
+      "included": true
+    },
+    {
+      "pair_id": "txt_00acc224d8c35fb2__B2__ref_lv_2671",
+      "included": true
+    },
+    {
+      "pair_id": "txt_01207bb9be0a81b6__B4__ref_lv_4372",
+      "included": true
+    },
+    {
+      "pair_id": "txt_01207bb9be0a81b6__B4__ref_r03",
+      "included": false
+    },
+    {
+      "pair_id": "txt_01207bb9be0a81b6__B0__ref_r03",
+      "included": false
+    },
+    {
+      "pair_id": "txt_01207bb9be0a81b6__B2__ref_lv_4372",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0140c5a73c9c238f__B4__ref_lv_3056",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0140c5a73c9c238f__B4__ref_r13",
+      "included": false
+    },
+    {
+      "pair_id": "txt_0140c5a73c9c238f__B0__ref_r13",
+      "included": true
+    },
+    {
+      "pair_id": "txt_0140c5a73c9c238f__B2__ref_lv_3056",
+      "included": true
+    },
+    {
+      "pair_id": "txt_024dd7c0da2425c8__B4__ref_lv_5548",
+      "included": false
+    },
+    {
+      "pair_id": "txt_024dd7c0da2425c8__B4__ref_r06",
+      "included": true
+    },
+    {
+      "pair_id": "txt_024dd7c0da2425c8__B0__ref_lv_5548",
+      "included": false
+    },
+    {
+      "pair_id": "txt_024dd7c0da2425c8__B2__ref_r06",
+      "included": false
+    },
+    {
+      "pair_id": "txt_027c185438e02d69__B4__ref_r12",
+      "included": false
+    },
+    {
+      "pair_id": "txt_027c185438e02d69__B4__ref_lv_4372",
+      "included": true
+    },
+    {
+      "pair_id": "txt_027c185438e02d69__B0__ref_lv_4372",
+      "included": false
+    },
+    {
+      "pair_id": "txt_027c185438e02d69__B2__ref_r12",
+      "included": false
+    },
+    {
+      "pair_id": "txt_05c0d5109b02b4b6__B4__ref_lv_4091",
+      "included": true
+    },
+    {
+      "pair_id": "txt_05c0d5109b02b4b6__B4__ref_r02",
+      "included": false
+    },
+    {
+      "pair_id": "txt_05c0d5109b02b4b6__B0__ref_r02",
+      "included": false
+    },
+    {
+      "pair_id": "txt_05c0d5109b02b4b6__B2__ref_lv_4091",
+      "included": false
+    },
+    {
+      "pair_id": "txt_09e378f20c86d4d3__B4__ref_r13",
+      "included": false
+    },
+    {
+      "pair_id": "txt_09e378f20c86d4d3__B4__ref_lv_4091",
+      "included": true
+    },
+    {
+      "pair_id": "txt_09e378f20c86d4d3__B0__ref_r13",
+      "included": true
+    },
+    {
+      "pair_id": "txt_09e378f20c86d4d3__B2__ref_lv_4091",
+      "included": false
+    }
+  ],
+  "solver": {
+    "implementation": "scipy.optimize.milp / HiGHS",
+    "scipy_version": "1.17.1",
+    "optimal_sum_squared_voice_counts": 128
+  },
+  "selected_pair_ids": [
+    "txt_009d072a3add4b66__B2__ref_r07",
+    "txt_009d072a3add4b66__B4__ref_r07",
+    "txt_004aa4f5d1de5c70__B0__ref_lv_5548",
+    "txt_004aa4f5d1de5c70__B2__ref_r08",
+    "txt_004aa4f5d1de5c70__B4__ref_r08",
+    "txt_0093c996cdb12915__B4__ref_lv_5397",
+    "txt_027c185438e02d69__B4__ref_lv_4372",
+    "txt_00acc224d8c35fb2__B0__ref_r09",
+    "txt_00acc224d8c35fb2__B2__ref_lv_2671",
+    "txt_00acc224d8c35fb2__B4__ref_r09",
+    "txt_000c5bd4ae2508e6__B0__ref_lv_2826",
+    "txt_000c5bd4ae2508e6__B2__ref_r04",
+    "txt_000c5bd4ae2508e6__B4__ref_lv_2826",
+    "txt_007df2455dcd1175__B0__ref_lv_4471",
+    "txt_007df2455dcd1175__B4__ref_lv_4471",
+    "txt_05c0d5109b02b4b6__B4__ref_lv_4091",
+    "txt_024dd7c0da2425c8__B4__ref_r06",
+    "txt_01207bb9be0a81b6__B2__ref_lv_4372",
+    "txt_01207bb9be0a81b6__B4__ref_lv_4372",
+    "txt_0069dcb829ef2042__B2__ref_lv_2671",
+    "txt_0069dcb829ef2042__B4__ref_lv_2671",
+    "txt_09e378f20c86d4d3__B0__ref_r13",
+    "txt_09e378f20c86d4d3__B4__ref_lv_4091",
+    "txt_000ab06f56948780__B0__ref_r01",
+    "txt_000ab06f56948780__B2__ref_lv_5397",
+    "txt_000ab06f56948780__B4__ref_lv_5397",
+    "txt_0140c5a73c9c238f__B0__ref_r13",
+    "txt_0140c5a73c9c238f__B2__ref_lv_3056",
+    "txt_0140c5a73c9c238f__B4__ref_lv_3056",
+    "txt_0082eead47e7a4c5__B2__ref_r02",
+    "txt_0082eead47e7a4c5__B4__ref_r02",
+    "txt_0051c8a28e60303e__B0__ref_r12",
+    "txt_0051c8a28e60303e__B4__ref_r12",
+    "txt_000c98e87137ea11__B0__ref_r10",
+    "txt_000c98e87137ea11__B2__ref_lv_4471",
+    "txt_000c98e87137ea11__B4__ref_r10",
+    "txt_00078e19097b0038__B0__ref_lv_2826",
+    "txt_00078e19097b0038__B2__ref_r05",
+    "txt_00078e19097b0038__B4__ref_r05",
+    "txt_0007e5d9729e811d__B0__ref_r11",
+    "txt_0007e5d9729e811d__B2__ref_lv_3056",
+    "txt_0007e5d9729e811d__B4__ref_r11",
+    "txt_000f0d5a651d1d26__B0__ref_lv_5397",
+    "txt_000f0d5a651d1d26__B4__ref_r01",
+    "txt_0073929aa16fa69c__B0__ref_lv_4091",
+    "txt_0073929aa16fa69c__B2__ref_r03",
+    "txt_0073929aa16fa69c__B4__ref_r03",
+    "txt_0092117b464dd5c6__B0__ref_lv_5548",
+    "txt_0092117b464dd5c6__B2__ref_r04",
+    "txt_0092117b464dd5c6__B4__ref_lv_5548"
+  ],
+  "excluded_original_pair_ids": [
+    "txt_009d072a3add4b66__B0__ref_lv_3056",
+    "txt_009d072a3add4b66__B4__ref_lv_3056",
+    "txt_00b87ed6586fc041__B0__ref_lv_2671",
+    "txt_00b87ed6586fc041__B2__ref_r06",
+    "txt_00b87ed6586fc041__B4__ref_lv_2671",
+    "txt_00b87ed6586fc041__B4__ref_r06",
+    "txt_004aa4f5d1de5c70__B4__ref_lv_5548",
+    "txt_007d62f12aec89b1__B0__ref_lv_4372",
+    "txt_007d62f12aec89b1__B2__ref_r09",
+    "txt_007d62f12aec89b1__B4__ref_lv_4372",
+    "txt_007d62f12aec89b1__B4__ref_r09",
+    "txt_0093c996cdb12915__B0__ref_r05",
+    "txt_0093c996cdb12915__B2__ref_lv_5397",
+    "txt_0093c996cdb12915__B4__ref_r05",
+    "txt_00b1af1f7a3dd4ab__B0__ref_lv_2826",
+    "txt_00b1af1f7a3dd4ab__B2__ref_r08",
+    "txt_00b1af1f7a3dd4ab__B4__ref_lv_2826",
+    "txt_00b1af1f7a3dd4ab__B4__ref_r08",
+    "txt_027c185438e02d69__B0__ref_lv_4372",
+    "txt_027c185438e02d69__B2__ref_r12",
+    "txt_027c185438e02d69__B4__ref_r12",
+    "txt_1697b31f06bd02be__B0__ref_r07",
+    "txt_1697b31f06bd02be__B2__ref_lv_2671",
+    "txt_1697b31f06bd02be__B4__ref_lv_2671",
+    "txt_1697b31f06bd02be__B4__ref_r07",
+    "txt_00acc224d8c35fb2__B4__ref_lv_2671",
+    "txt_017c63fe4666a393__B0__ref_r08",
+    "txt_017c63fe4666a393__B2__ref_lv_4471",
+    "txt_017c63fe4666a393__B4__ref_lv_4471",
+    "txt_017c63fe4666a393__B4__ref_r08",
+    "txt_000c5bd4ae2508e6__B4__ref_r04",
+    "txt_000c9b96319460d9__B0__ref_lv_5548",
+    "txt_000c9b96319460d9__B2__ref_r11",
+    "txt_000c9b96319460d9__B4__ref_lv_5548",
+    "txt_000c9b96319460d9__B4__ref_r11",
+    "txt_007df2455dcd1175__B2__ref_r11",
+    "txt_007df2455dcd1175__B4__ref_r11",
+    "txt_0080642650cd4ccc__B0__ref_r09",
+    "txt_0080642650cd4ccc__B2__ref_lv_4372",
+    "txt_0080642650cd4ccc__B4__ref_lv_4372",
+    "txt_0080642650cd4ccc__B4__ref_r09",
+    "txt_05c0d5109b02b4b6__B0__ref_r02",
+    "txt_05c0d5109b02b4b6__B2__ref_lv_4091",
+    "txt_05c0d5109b02b4b6__B4__ref_r02",
+    "txt_024dd7c0da2425c8__B0__ref_lv_5548",
+    "txt_024dd7c0da2425c8__B2__ref_r06",
+    "txt_024dd7c0da2425c8__B4__ref_lv_5548",
+    "txt_032978f9bb321744__B0__ref_r03",
+    "txt_032978f9bb321744__B2__ref_lv_5397",
+    "txt_032978f9bb321744__B4__ref_lv_5397",
+    "txt_032978f9bb321744__B4__ref_r03",
+    "txt_01207bb9be0a81b6__B0__ref_r03",
+    "txt_01207bb9be0a81b6__B4__ref_r03",
+    "txt_0069dcb829ef2042__B0__ref_r10",
+    "txt_0069dcb829ef2042__B4__ref_r10",
+    "txt_09e378f20c86d4d3__B2__ref_lv_4091",
+    "txt_09e378f20c86d4d3__B4__ref_r13",
+    "txt_000ab06f56948780__B4__ref_r01",
+    "txt_0140c5a73c9c238f__B4__ref_r13",
+    "txt_0082eead47e7a4c5__B0__ref_lv_4471",
+    "txt_0082eead47e7a4c5__B4__ref_lv_4471",
+    "txt_0051c8a28e60303e__B2__ref_lv_2826",
+    "txt_0051c8a28e60303e__B4__ref_lv_2826",
+    "txt_000c98e87137ea11__B4__ref_lv_4471",
+    "txt_00078e19097b0038__B4__ref_lv_2826",
+    "txt_0007e5d9729e811d__B4__ref_lv_3056",
+    "txt_000f0d5a651d1d26__B2__ref_r01",
+    "txt_000f0d5a651d1d26__B4__ref_lv_5397",
+    "txt_0073929aa16fa69c__B4__ref_lv_4091",
+    "txt_0092117b464dd5c6__B4__ref_r04"
+  ],
+  "subset_benchmark_sha256": "c2de32c4458ec4a7776ca7364eb0f5c091cce1ad2443c28240c492bc7642923b",
+  "subset_references_sha256": "b4abebf8a8916628ec77fe07f604c6f5a0ed7a484cc6554cf97f5e5b34d8b827",
+  "inherited_row_metadata": "All row fields, text/voice pairs, IDs, seeds, texts, and source provenance remain unchanged; evaluation_set retains its original value. This protocol identifies the revised subset.",
+  "original_120_modified": false,
+  "freeze_created_by_selector": false,
+  "audit": {
+    "examples": 50,
+    "work_clusters": 22,
+    "root_passages": 22,
+    "voices": 21,
+    "bucket_counts": {
+      "B2": 14,
+      "B4": 22,
+      "B0": 14
+    },
+    "cohort_counts_by_bucket": {
+      "B0": {
+        "new_external_heldout": 7,
+        "previously_evaluated_heldout": 7
+      },
+      "B2": {
+        "previously_evaluated_heldout": 7,
+        "new_external_heldout": 7
+      },
+      "B4": {
+        "previously_evaluated_heldout": 11,
+        "new_external_heldout": 11
+      }
+    },
+    "voice_counts": {
+      "ref_lv_2671": 3,
+      "ref_lv_2826": 3,
+      "ref_lv_3056": 3,
+      "ref_lv_4091": 3,
+      "ref_lv_4372": 3,
+      "ref_lv_4471": 3,
+      "ref_lv_5397": 4,
+      "ref_lv_5548": 3,
+      "ref_r01": 2,
+      "ref_r02": 2,
+      "ref_r03": 2,
+      "ref_r04": 2,
+      "ref_r05": 2,
+      "ref_r06": 1,
+      "ref_r07": 2,
+      "ref_r08": 2,
+      "ref_r09": 2,
+      "ref_r10": 2,
+      "ref_r11": 2,
+      "ref_r12": 2,
+      "ref_r13": 2
+    },
+    "sum_squared_voice_counts": 128,
+    "all_rows_unchanged": true,
+    "all_shorter_texts_prefix_their_selected_B4": true
+  }
+}

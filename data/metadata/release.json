@@ -1,0 +1,21 @@
+{
+  "corpus_version": "v3.1",
+  "audio_copy": "byte-for-byte unchanged from enhanced v3.1 FLAC files",
+  "build_script_sha256": "b94d2c28bd7ccfd3c05f225c2a8697761dd9b8b42fbd94ebe4a07346fabc2e6c",
+  "shuffle_seed": 260,
+  "input_manifest_sha256": {
+    "all": "b901ea614c95ab6cbf820bb06dd0a6f2ccf6b7deb49349baa298e7a2075a6245",
+    "train_long": "4338e5ab45575050e13b9ceff49eb07e0735cb36ea89703fa86e95854ef07958",
+    "dev": "3eeed671a3650771ca3e2d5f9306e0efc7a6fe5c13d0ac7a7b531c2ae3e60a9c",
+    "test": "cc4742b702763be5b47f9e28879c1453cd09a84ac041149ce5a7dadf0676dd8a"
+  },
+  "audio_sha256_verified": 6380,
+  "source_license_evidence_verified": 313,
+  "held_out_channels_do_not_overlap_training": true,
+  "source_license_version": "Not stated in the archived metadata; not inferred",
+  "transcript_repairs": [
+    "_Q3eR3hX7lo_789.28_850.50",
+    "ypp0JSfK3UE_487.44_575.46"
+  ],
+  "transcript_repairs_sha256": "6e0e554ab501cb0b289fa5c852d65913b1ae1607f412677e578edeebd551112b"
+}

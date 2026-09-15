@@ -1,0 +1,76 @@
+{
+  "dataset": "lab260/Balalaika-longform",
+  "corpus_version": "v3.1",
+  "release_date": "2026-09-15",
+  "samples": 6380,
+  "hours": 189.12980833333336,
+  "audio_decoded_hours": 189.1294135933563,
+  "videos": 313,
+  "channels": 41,
+  "duration_min_sec": 30.0,
+  "duration_max_sec": 899.47,
+  "duration_median_sec": 46.445,
+  "duration_mean_sec": 106.71901410658307,
+  "duration_bins_sec": [
+    30,
+    60,
+    120,
+    300,
+    600,
+    900
+  ],
+  "duration_bin_counts": [
+    3538,
+    1733,
+    699,
+    276,
+    134
+  ],
+  "duration_bin_hours": [
+    43.72657222222227,
+    42.451394444444446,
+    38.06697222222236,
+    33.9562833333333,
+    30.928586111111088
+  ],
+  "splits": {
+    "train": {
+      "samples": 6043,
+      "hours": 170.6768,
+      "videos": 265,
+      "channels": 27,
+      "empty_transcripts": 0
+    },
+    "validation": {
+      "samples": 120,
+      "hours": 8.501238888888889,
+      "videos": 17,
+      "channels": 7,
+      "empty_transcripts": 0
+    },
+    "test": {
+      "samples": 193,
+      "hours": 9.068236111111112,
+      "videos": 30,
+      "channels": 7,
+      "empty_transcripts": 0
+    },
+    "excluded": {
+      "samples": 24,
+      "hours": 0.8835333333333334,
+      "videos": 7,
+      "channels": 5,
+      "empty_transcripts": 0
+    }
+  },
+  "audio_formats": {
+    "44100Hz_2ch_PCM16": 5955,
+    "48000Hz_2ch_PCM16": 416,
+    "44100Hz_1ch_PCM16": 9
+  },
+  "source_license_counts": {
+    "creativeCommon": 6380
+  },
+  "shards": 28,
+  "shard_bytes": 25230223360
+}

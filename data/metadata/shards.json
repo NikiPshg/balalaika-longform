@@ -1,0 +1,226 @@
+[
+  {
+    "path": "data/train/train-00000.tar",
+    "split": "train",
+    "samples": 243,
+    "bytes": 997017600,
+    "sha256": "eb9d150044057d89d2d32a9b1ccd7338a657240a22f5c3b17a10fb4563a3ec54",
+    "hours": 7.332719444444445
+  },
+  {
+    "path": "data/train/train-00001.tar",
+    "split": "train",
+    "samples": 277,
+    "bytes": 998717440,
+    "sha256": "f8985ea2e858b3cb3529f9b79de8c98bd466cc03831062209d4d9f636ab54aef",
+    "hours": 7.78891111111111
+  },
+  {
+    "path": "data/train/train-00002.tar",
+    "split": "train",
+    "samples": 308,
+    "bytes": 998993920,
+    "sha256": "d209675e714cf8722c28b090b58ea0ddcdf228d305dc24680a5f3741159b9d31",
+    "hours": 7.52815
+  },
+  {
+    "path": "data/train/train-00003.tar",
+    "split": "train",
+    "samples": 296,
+    "bytes": 994416640,
+    "sha256": "09a119701ba348ace3f4db5253d92e15f644970dfeb7cf60ff4cd38817ccd2f5",
+    "hours": 7.520088888888889
+  },
+  {
+    "path": "data/train/train-00004.tar",
+    "split": "train",
+    "samples": 241,
+    "bytes": 995471360,
+    "sha256": "0fc070158a223a7f8970758d2a99c6d6f855b225ffaf1c007b436b0c6cf47d78",
+    "hours": 7.488086111111111
+  },
+  {
+    "path": "data/train/train-00005.tar",
+    "split": "train",
+    "samples": 222,
+    "bytes": 994334720,
+    "sha256": "c4172c977297e68c628ce775ff86394eeb510f2e665b6c687e6a0bbfc9e8005e",
+    "hours": 7.616461111111111
+  },
+  {
+    "path": "data/train/train-00006.tar",
+    "split": "train",
+    "samples": 238,
+    "bytes": 998922240,
+    "sha256": "975314c779231bafa91f08081128d39197d256cf11c5ed164d3b10218b378068",
+    "hours": 7.229527777777777
+  },
+  {
+    "path": "data/train/train-00007.tar",
+    "split": "train",
+    "samples": 292,
+    "bytes": 999680000,
+    "sha256": "967bd83b43921c4e3bfa576bc85d0e956e7d6a3dcae7c107dd19dca543fc583c",
+    "hours": 7.516136111111111
+  },
+  {
+    "path": "data/train/train-00008.tar",
+    "split": "train",
+    "samples": 292,
+    "bytes": 999598080,
+    "sha256": "614b056c02ca59b3b8fb3e125609134b7bf6e7da127899ec181dc4b3c084fb41",
+    "hours": 7.507291666666666
+  },
+  {
+    "path": "data/train/train-00009.tar",
+    "split": "train",
+    "samples": 284,
+    "bytes": 988047360,
+    "sha256": "a31391cc9828c156d42067844e728d18e603017b9b5d0a6b23e2e6612025bc9e",
+    "hours": 7.3826583333333335
+  },
+  {
+    "path": "data/train/train-00010.tar",
+    "split": "train",
+    "samples": 252,
+    "bytes": 986255360,
+    "sha256": "0d870b0b15b56afe21b0c655df10eb96209fb8c85ddcd51761b56e5cff368976",
+    "hours": 7.122247222222223
+  },
+  {
+    "path": "data/train/train-00011.tar",
+    "split": "train",
+    "samples": 247,
+    "bytes": 1000110080,
+    "sha256": "6fbc9e48f9cab7d8a5ac06e49104c83dc2bd13af3a020207cc5fdd58decb7316",
+    "hours": 7.378338888888889
+  },
+  {
+    "path": "data/train/train-00012.tar",
+    "split": "train",
+    "samples": 287,
+    "bytes": 999464960,
+    "sha256": "76a308daac185bdb4180800a15f8cfb6a5669fd29c90c8c365f03241bca35496",
+    "hours": 7.426861111111111
+  },
+  {
+    "path": "data/train/train-00013.tar",
+    "split": "train",
+    "samples": 268,
+    "bytes": 997918720,
+    "sha256": "f0609a433a0394cb22bf66a4094450395d66d578efe2657b1cf1b31c70002f2f",
+    "hours": 7.539988888888889
+  },
+  {
+    "path": "data/train/train-00014.tar",
+    "split": "train",
+    "samples": 250,
+    "bytes": 998307840,
+    "sha256": "76993f5dddc7969325629fbc4b0c706055a4056d7919f4f8d9ac07f91fdcbce4",
+    "hours": 7.538166666666667
+  },
+  {
+    "path": "data/train/train-00015.tar",
+    "split": "train",
+    "samples": 204,
+    "bytes": 998789120,
+    "sha256": "e1ccec9f694a42e4adf7f90e89d6e12069156ad377350c85394afd5485b54b29",
+    "hours": 6.987886111111111
+  },
+  {
+    "path": "data/train/train-00016.tar",
+    "split": "train",
+    "samples": 275,
+    "bytes": 995020800,
+    "sha256": "91ca9e987ac09680c31db66da2500bafb50b22fb38bae2bce2ff5fb569409eae",
+    "hours": 7.607744444444445
+  },
+  {
+    "path": "data/train/train-00017.tar",
+    "split": "train",
+    "samples": 279,
+    "bytes": 990238720,
+    "sha256": "b769c73938852c24579ca38bef773c9dc6946ad9698e6136363c682a12bc29a9",
+    "hours": 7.372602777777778
+  },
+  {
+    "path": "data/train/train-00018.tar",
+    "split": "train",
+    "samples": 234,
+    "bytes": 998574080,
+    "sha256": "49a4ee320f7d49e1044851109863fee9132778b28bed0bc7270b9da0e743b462",
+    "hours": 7.572494444444445
+  },
+  {
+    "path": "data/train/train-00019.tar",
+    "split": "train",
+    "samples": 266,
+    "bytes": 997632000,
+    "sha256": "d1cd5a17340b4d91d368041d6e4299f6a0b10d2a78e9690f639ec31adeb3ad26",
+    "hours": 7.592880555555555
+  },
+  {
+    "path": "data/train/train-00020.tar",
+    "split": "train",
+    "samples": 252,
+    "bytes": 999987200,
+    "sha256": "ab68b6b01ef1063fb60c9d9085e69988dfaf46493a896b16b0dad2955133eee3",
+    "hours": 7.409947222222223
+  },
+  {
+    "path": "data/train/train-00021.tar",
+    "split": "train",
+    "samples": 263,
+    "bytes": 993699840,
+    "sha256": "f57cecd466cdb63bab35cca5814efa1d9d90d23add3909782405afcb8f14b315",
+    "hours": 7.422113888888889
+  },
+  {
+    "path": "data/train/train-00022.tar",
+    "split": "train",
+    "samples": 273,
+    "bytes": 937748480,
+    "sha256": "0ad8e44883ffd53b027927cfe3c5e317f30e8840ed54aedb38f8d7f9c12c4377",
+    "hours": 6.795497222222222
+  },
+  {
+    "path": "data/validation/validation-00000.tar",
+    "split": "validation",
+    "samples": 102,
+    "bytes": 994938880,
+    "sha256": "36dad0b5ac9154d0fca7dc538832db7abafd6f247dfe9337e65270a884668f74",
+    "hours": 7.516011111111111
+  },
+  {
+    "path": "data/validation/validation-00001.tar",
+    "split": "validation",
+    "samples": 18,
+    "bytes": 117606400,
+    "sha256": "1331deb1bc900dc1b3ee250605808dad00bc66b3c1b45a027a2a2dd295f6a78e",
+    "hours": 0.9852277777777778
+  },
+  {
+    "path": "data/test/test-00000.tar",
+    "split": "test",
+    "samples": 175,
+    "bytes": 992860160,
+    "sha256": "f0549cb635d2bdabf22d221f234c7d971eecf67d2055d611e5f4fa89945390c8",
+    "hours": 8.065991666666667
+  },
+  {
+    "path": "data/test/test-00001.tar",
+    "split": "test",
+    "samples": 18,
+    "bytes": 126607360,
+    "sha256": "279240fa238a8c40b2c9506b527abe018091e21f5f888f14f8d400e96fd17e38",
+    "hours": 1.0022444444444445
+  },
+  {
+    "path": "data/excluded/excluded-00000.tar",
+    "split": "excluded",
+    "samples": 24,
+    "bytes": 139264000,
+    "sha256": "3e96519806a8c6debf2f61d59e19a09b870ee3a67e4839ee33f63d067e8d7a1c",
+    "hours": 0.8835333333333334
+  }
+]

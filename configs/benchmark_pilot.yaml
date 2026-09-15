@@ -1,0 +1,219 @@
+# Frozen recipe for the pilot benchmark (PLAN.md §7).  Owner: A2.
+# Implementation: src/benchmark/build_pilot.py -> data/benchmark/pilot.jsonl
+#
+# No sample_id / video_id is named anywhere: the roots are chosen by criteria,
+# so the whole benchmark rebuilds from the (still changing) parquet with
+#   python src/benchmark/build_pilot.py
+version: 1
+frozen_at: "2026-08-28"
+owner: A2
+
+# Bucket = HUMAN reference duration in seconds (PLAN.md §7.1).
+buckets:
+  B0: [20, 40]
+  B1: [60, 90]
+  B2: [120, 180]
+  B3: [240, 360]
+  B4: [480, 720]
+
+pilot:
+  n_dataset_roots: 4          # genres 1-4
+  n_external_roots: 2         # genres 5-6
+  voices_per_text: 2          # owned by A5; not materialised here
+  generations_per_checkpoint: 60
+
+dataset_roots:
+  source_manifest: data/manifests/dev.jsonl
+  text_source: "asr.gigaam-v3-e2e-ctc"        # punctuated + cased
+  timestamp_source: "asr_ts.gigaam-v3-e2e-ctc" # "start\tend\ttext" word groups
+  # Eligibility (all mandatory).
+  min_duration_sec: 480          # a root must cover the whole of B4
+  min_asr_consistency: 90        # PLAN §6.2 dev/test rule
+  require_single_speaker: true
+  selection_window_sec: 720      # 12 minutes of material AFTER prefix_start (= B4 upper bound)
+  forbid_digits: true            # A3 froze the CosyVoice text frontend to ""
+  # A Latin token outside this table disqualifies the root (it cannot be spoken
+  # by a Russian-only frontend and must not be silently deleted).
+  latin_transliteration:
+    iphone: айфон
+    youtube: ютуб
+    zoom: зум
+    skype: скайп
+    excel: эксель
+    google: гугл
+    online: онлайн
+    email: имейл
+  # ---------------------------------------------------------------------
+  # Where the nested-prefix chain starts (added 2026-08-28 after review).
+  # A YouTube recording almost never starts with the genre it represents: it
+  # starts with a microphone / audio check, a greeting roll-call or a channel
+  # promo ("напишите, слышно ли меня", "поставьте лайк", "во время
+  # онлайн-трансляции на ютуб-канале").  B0 is 20-40 s, so that block used to
+  # BE the whole B0 text of one pilot root.  Frozen, criteria-based rule - no
+  # sample_id is named anywhere:
+  #
+  #   the chain starts at the FIRST sentence boundary such that the next
+  #   `lookahead_sec` seconds of the recording match none of `opening_patterns`;
+  #   if no such boundary exists at or before `max_start_sec`, the root is
+  #   DISQUALIFIED (it is not silently started at 0).
+  #
+  # Everything downstream is measured from that start: human_offset_start is the
+  # start time, human_duration_sec = offset_end - offset_start, the 12-minute
+  # selection window is [start, start + selection_window_sec], and the filler
+  # density that ranks the roots is measured over that window.
+  prefix_start:
+    method: first_sentence_boundary_with_clean_lookahead
+    lookahead_sec: 60
+    max_start_sec: 300
+    # Case-insensitive, ё->е, matched against the raw ASR text of the lookahead
+    # window.  Three frozen families: A/V check, stream/audience address,
+    # greeting + channel promo.
+    opening_patterns:
+    # -- A/V check
+    - '\bмикрофон\w*\b'
+    - '\bкамер[аыуое]\w*\b'
+    - '\bзвук\w*\b'
+    - '\bсвяз[ьи]\b'
+    - '\bслышн\w*\b'
+    - '\bслышите\b'
+    - '\bслышат\b'
+    - '\bвидите\b'
+    - '\bвидно\b'
+    - '\bпроверк\w*\b'
+    # -- stream / audience address
+    - '\bнапиши\w*\b'
+    - '\bпишите\b'
+    - '\bлайк\w*\b'
+    - '\bподпиш\w*\b'
+    - '\bподписк\w*\b'
+    - '\bкомментар\w*\b'
+    - '\bчат[еауы]?\b'
+    - '\bстрим\w*\b'
+    - '\bтрансляц\w*\b'
+    - '\bэфир\w*\b'
+    - '\bютуб\w*\b'
+    - '\bканал\w*\b'
+    - '\bвебинар\w*\b'
+    - '\bзапис[ьи]\b'
+    - '\bссылк\w*\b'
+    # -- greeting / channel promo
+    - '\bпривет\w*\b'
+    - '\bздравствуй\w*\b'
+    - '\bдобрый (день|вечер)\b'
+    - '\bдоброе утро\b'
+    - '\bдобро пожаловать\b'
+    - '\bдорогие (друзья|слушател\w*|зрител\w*)\b'
+    - '\bприветству\w*\b'
+    - '\bрады вас\b'
+    - '\bс вами (снова|опять)\b'
+  # One root per channel (the lowest filler density in that channel, measured
+  # over the 12 minutes after prefix_start), then the genre assignment picks
+  # 4 channels out of the pool.
+  root_per_channel: lowest_filler_density
+  # Dataset v3.1 / split rule v3 (2026-08-29): dev holds only 2-8 channels, so when fewer
+  # channels than n_dataset_roots have an eligible root the pool is topped up with the
+  # next-best roots (by density) from OTHER VIDEOS of the eligible channels — one root per
+  # video, never two roots from one video.  `pilot_stats.json` records whether it was used.
+  root_fallback: one_per_video
+  genre_assignment:
+    method: max_sum_z_score          # brute force over injective assignments
+    filler_penalty_lambda: 0.0       # genre fit decides; density is the tie-break
+    features:
+      1: [narrative_markers_per_100w, proper_names_per_100w]
+      2: [explanatory_markers_per_100w]
+      3: [question_marks_per_100w, quote_marks_per_100w]
+      4: [normative_markers_per_100w, mean_sentence_length_words]
+  # Prefix cut: the word group whose (edited) text ends on sentence punctuation
+  # and whose end time is closest to the centre of the bucket, strictly after
+  # the previous bucket's cut.
+  prefix_cut: nearest_sentence_boundary_to_bucket_centre
+
+external_roots:
+  documents:
+  - genre: 5
+    path: data/benchmark/external/genre5_numbers.txt
+    title: "Сводный отчёт о работе транспортного узла"
+    note: "numbers, dates, units, names, abbreviations - all spelled in Russian words"
+  - genre: 6
+    path: data/benchmark/external/genre6_stress.txt
+    title: "Городской архив Заозёрья"
+    note: "enumerations, near-repeat sentences, permitted repetitions, entity returns"
+  human_duration:
+    method: estimated_from_dev_wpm
+    statistic: median
+    source_manifest: data/manifests/dev.jsonl
+    # human_audio_path stays null and human_offset_* stay null for these two.
+
+normalization:
+  spec: configs/text_normalization.yaml
+  implementation: src/eval/normalize.py     # written by A4, verified by A2
+  reference_field: text_ref                 # = normalize(text_tts, primary_variant)
+
+disfluency:
+  spec: configs/disfluency_filter.yaml
+  implementation: src/benchmark/disfluency.py
+  applied_to: text_tts
+  unedited_kept_in: text_tts_unedited
+
+# One charset for every benchmark text (added 2026-08-28 after review).  The
+# gigaam-v3-e2e-ctc transcript mixes quotation styles and emits stray dashes;
+# A3 froze the CosyVoice text frontend to "", so whatever is in text_tts reaches
+# the model tokenizer verbatim.  Implemented in
+# src/benchmark/disfluency.py::apply_charset, applied inside finalize(), so it
+# holds for text_tts AND text_tts_unedited, and it is prefix-stable (every rule
+# looks only to the left).
+text_charset:
+  # after the pass, text_tts may contain ONLY these, plus Cyrillic and space
+  allowed_punctuation: [".", ",", "!", "?", ":", ";", "…", "—", "-"]
+  dashes:
+    # every dash variant collapses to U+2014
+    map_to_em_dash: ["--", "---", "–", "‒", "―", "−", "‐", "‑"]
+    # ... and a resulting em dash in sentence-initial position is deleted:
+    # the ASR does not produce Russian dialogue dashes (measured: 0 of 78 em
+    # dashes in the previous pilot B4 texts were sentence-initial), so one there
+    # is an artifact of a "--" run.
+    delete_sentence_initial: true
+  quotes:
+    # DELETE every quotation mark instead of unifying them.  Reasons:
+    #  (1) the ASR's quotes are not trustworthy - the previous pilot contained
+    #      an empty pair («экономика и «».), an orphan opener and an orphan " ;
+    #  (2) balancing is not prefix-stable: a quotation opened in B3 and closed
+    #      in B4 would have to be dropped from B3 and kept in B4, which breaks
+    #      the nested-prefix contract of PLAN §7.2;
+    #  (3) the frozen normalizer strips quotes, so text_ref and therefore WER
+    #      are unaffected - only the TTS input changes.
+    # Genre 3 still gets its quotation evidence: the genre features are computed
+    # on the RAW window text, before this pass.
+    delete: ["«", "»", "\"", "“", "”", "„", "‟", "‹", "›", "‛", "❝", "❞"]
+  spacing:
+    # "ингредиенты?.Могут" -> "ингредиенты?. Могут": a sentence terminator glued
+    # to the next word is an ASR artifact and would reach the frozen frontend as
+    # one long token.
+    space_after_glued_sentence_end: true
+  apostrophes:
+    # "О'кей" -> "Окей".  In this corpus apostrophes only ever occur word-internally
+    # and the frozen normalizer maps them to a space, so deleting them makes
+    # text_tts and text_ref agree on the word count.
+    delete: ["'", "’", "‘", "`", "´", "ʼ"]
+
+# Model-side size fields (PLAN §7.1: "model text tokens ... context occupancy").
+# CPU-only: AutoTokenizer over the CosyVoice3 LLM tokenizer directory, no weights.
+tokenizer:
+  path: models/cosyvoice3/CosyVoice-BlankEN
+  class: transformers.AutoTokenizer
+  field: text_tts_tokens          # len(tokenizer.encode(text_tts)), no special tokens
+  context_window: 32768           # Qwen2 max_position_embeddings of the CV3 LLM
+context_occupancy:
+  # Frozen estimate used before any generation exists (PLAN §7.1, §9.6).
+  # (text_tts_tokens + speech_token_rate * human_duration_sec + service_tokens) / context_window
+  formula: "(text_tts_tokens + 25 * human_duration_sec + 600) / 32768"
+  speech_token_rate_hz: 25        # PLAN §4.2
+  service_tokens: 600             # instruction + prompt speech + service tokens
+  field: context_occupancy_est
+
+hidden_set:
+  # Described in reports/benchmark_composition.md, NOT built by this script.
+  n_roots: 12
+  buckets: [B0, B1, B2, B3, B4]
+  source_manifest: data/manifests/test.jsonl
+  build_when: "after the pilot is analysed and the owner has finished filtering the parquet"

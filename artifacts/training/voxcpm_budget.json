@@ -1,0 +1,68 @@
+{
+  "built": "2026-09-02",
+  "builder": "A22-voxcpm (E12 P2)",
+  "budget_unit": "seconds of target audio per run (prereg E12: VoxCPM2 has continuous 6.25 Hz latents, no discrete audio tokens; match the Q-series budget of 23.05M frames @12.5 Hz = 1.844M audio-seconds per arm, tolerance +-3%)",
+  "codec_frame_hz": 6.25,
+  "q_series_targets_sec": {
+    "qe3p": 1843620.72,
+    "qe2p": 1840485.84,
+    "note": "Q-series actuals from data/train/qwen/budget_match.json frames_total / 12.5"
+  },
+  "vce3p": {
+    "manifest": "data/train/voxcpm/vce3p.jsonl",
+    "rows": 6041,
+    "rows_after_official_8192_filter": 5897,
+    "rows_dropped": 144,
+    "seconds_per_pass_full": 614287.24,
+    "seconds_per_pass_kept": 502289.18,
+    "seconds_dropped": 111998.06,
+    "dropped_share_of_seconds": 0.1823,
+    "filter_note": "OFFICIAL mechanism (train_voxcpm_finetune.py:138-156, max_batch_tokens 8192, batch 1): a unit whose packed length text_tokens + ceil(ceil(dur*25)/4) + 2 exceeds the model's 8192-position budget cannot be trained without silent truncation (packers.py:171-182 would cut the audio tail and the stop label); the 144 dropped units are the LONGEST ones (up to 15 min, packed 8193-15783). DOCUMENTED E12 DEVIATION from bit-exact Q-series data: VoxCPM2's context cannot hold them; Lead sign-off 2026-09-02: DROP via the official filter, do NOT truncate (truncation corrupts stop-supervision; the 8192 ceiling is a property of the model itself, the dropped >13-min units lie outside its deployable envelope; budget refilled by 3.67 passes per the prereg audio-seconds rule). Paper/limitations: the VoxCPM2 arm trains on context-fitting units = 81.8% of corpus seconds.",
+    "mean_kept_unit_sec": 85.177,
+    "batch": 1,
+    "accum": 19,
+    "units_per_step": 19,
+    "seconds_per_step": 1618.36,
+    "steps": 1139,
+    "unit_forwards": 21641,
+    "passes_over_kept": 3.6698,
+    "seconds_total_expected": 1843316.6,
+    "ratio_to_qe3p_target": 0.99984,
+    "expectation_note": "shuffled epochs with drop_last; the 0.67 partial pass contributes its expected value (random subset of kept units); kept-unit durations are capped at ~609 s so the estimator is tight"
+  },
+  "vce2p": {
+    "manifest": "data/train/voxcpm/vce2p.jsonl",
+    "rows": 28427,
+    "rows_after_official_8192_filter": 28427,
+    "seconds_per_pass": 612322.03,
+    "mean_window_sec": 21.5402,
+    "batch": 4,
+    "accum": 18,
+    "windows_per_step": 72,
+    "seconds_per_step": 1550.9,
+    "steps": 1185,
+    "window_forwards": 85320,
+    "passes": 3.0014,
+    "seconds_total_expected": 1837810.0,
+    "ratio_to_qe2p_target": 0.99855,
+    "vram_note": "batch 6 peaked 46.4/47.4 GB (P2 probe) -> batch 4 x accum 18 keeps the same 72 windows/step at 43.6 GB peak"
+  },
+  "match": {
+    "seconds_ratio_vce2p_over_vce3p": 0.99701,
+    "seconds_per_step_ratio": 0.9583,
+    "q_series_seconds_per_step_ratio": 0.9553,
+    "all_within_prereg_tolerance_3pct": true
+  },
+  "training_recipe": {
+    "script": "scripts/train_voxcpm_finetune_local.py (local copy of the official script, diffs in reports/voxcpm_local_edits.patch)",
+    "precision": "fp32 master weights + bf16 autocast (official: from_local(training=True) keeps fp32, Accelerator(amp=True) autocasts bf16 -- train_voxcpm_finetune.py:100-102,293)",
+    "optimizer": "AdamW lr 1e-5 (official conf/voxcpm_v2 full-SFT default, same order as the series), weight_decay 0.01, cosine + warmup 5% (57/1139, 59/1185; series convention per Lead greenlight 2026-09-02), max_grad_norm 1.0",
+    "gradient_checkpointing": "REQUIRED and added locally (VOXCPM_GRAD_CKPT=1): upstream has none and a 48 GB card OOMs in backward already on a 120-s unit; see reports/voxcpm_local_edits.patch LOCAL EDIT (6)",
+    "env": "VOXCPM_GRAD_CKPT=1 VOXCPM_SAVE_OPTIMIZER=0 VOXCPM_SAVE_TOTAL_LIMIT=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True",
+    "configs": [
+      "configs/train/voxcpm/vce3p.yaml",
+      "configs/train/voxcpm/vce2p.yaml"
+    ],
+    "seed": "0 (series convention; upstream Accelerator hardcodes 42 -> VOXCPM_TRAIN_SEED knob, LOCAL EDIT 11)"
+  }
+}

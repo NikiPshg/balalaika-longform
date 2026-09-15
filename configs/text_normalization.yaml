@@ -1,0 +1,119 @@
+# Frozen text normalization spec for RuLongTTS evaluation.
+# Owner: A4 (Evaluation). Written 2026-08-27 because A2 had not produced the
+# file yet; A2/A0 may extend it, but any change after the first hidden run is
+# forbidden (PLAN.md §9.4).
+#
+# The implementation is src/eval/normalize.py. The YAML is the human-readable
+# contract; the code loads it and asserts that its own defaults match.
+
+version: 1
+frozen_at: "2026-08-27"
+owner: A4
+primary_variant: lenient   # PROPOSED (see reports/decisions.md); strict is always reported next to it
+
+common:
+  unicode_form: NFKC          # applied first
+  lowercase: true
+  yo_to_e: true               # ё -> е, Ё -> Е (after lowercase this is ё -> е)
+  # Every character that is NOT in keep_chars is replaced by a single space.
+  # Replacing (instead of deleting) means "какой-то" -> "какой то", which is the
+  # behaviour that makes reference and ASR hypothesis agree most often.
+  keep_chars_classes:
+    - "cyrillic_lowercase"    # а-я (ё already mapped to е)
+    - "latin_lowercase"       # a-z  (rare, kept so that latin insertions are visible)
+    - "digits"                # 0-9  (removed by the lenient variant, see below)
+  non_keep_char_action: "replace_with_space"
+  collapse_whitespace: true
+  strip: true
+
+variants:
+  strict:
+    expand_digits: false      # "1990" stays the literal token "1990"
+  lenient:
+    expand_digits: true       # "1990" -> "одна тысяча девятьсот девяносто"
+    digit_expansion:
+      implementation: "src/eval/normalize.py:number_to_russian_words"
+      language: ru
+      grammatical_gender: masculine
+      form: cardinal
+      # A pure-python deterministic routine is the frozen implementation so the
+      # numbers cannot drift with a pip upgrade. tests/test_eval_known_cases.py
+      # cross-checks it against num2words(lang='ru') for 0..2000 and a set of
+      # large values.
+      cross_check_package: num2words
+      max_digits: 24          # longer digit runs are read digit-by-digit
+
+# ===========================================================================
+# A2 section (added 2026-08-28).  PLAN.md §14 assigns this file to A2 and
+# src/eval/normalize.py to both A2 and A4; A4 wrote both first, A2 reviewed
+# them, adopted the rules below unchanged, and re-implemented them
+# independently in src/eval/normalize_spec_ref.py.  The two implementations
+# agree exactly (8008 corpus texts + 20017 integers, 0 mismatches, see
+# reports/normalization_spec.md).  Contract prose: reports/normalization_spec.md
+# ===========================================================================
+
+a2_review:
+  reviewed_at: "2026-08-28"
+  reviewer: A2
+  independent_implementation: src/eval/normalize_spec_ref.py
+  verdict: "adopted unchanged; one change PROPOSED below (proposed_v2)"
+
+# Explicit answers to the three questions A2 owes the contract.
+character_decisions:
+  hyphen:
+    rule: replace_with_space
+    effect: '"какой-то" -> "какой то", "по-моему" -> "по моему", "из-за" -> "из за"'
+    rationale: >
+      GigaAM-v3 writes compound words with and without the hyphen depending on
+      the utterance, and the dataset ROVER text has no hyphens at all.  Replacing
+      makes both sides agree.  Applied identically to reference and hypothesis,
+      so it cannot bias WER; it only inflates the word count of hyphenated
+      compounds by one token each, which is reported in reports/normalization_spec.md.
+  apostrophe:
+    rule: replace_with_space
+    characters: ["'", "’", "ʼ", "`"]
+    rationale: >
+      No Russian word requires an apostrophe.  It appears only in transliterated
+      foreign names, which benchmark text_tts may not contain anyway.
+  latin_letters:
+    rule: keep
+    rationale: >
+      A Latin fragment in a hypothesis is a real error (the model produced a
+      foreign token) and must stay visible instead of silently vanishing.
+      Benchmark text_tts, by contrast, may not contain Latin letters at all
+      (configs/benchmark_pilot.yaml: a Latin token outside the frozen
+      transliteration table disqualifies the root), because A3 froze the
+      CosyVoice text frontend to "" and it has no Russian/Latin handling.
+  digits:
+    rule: "strict keeps them literal; lenient expands them; text_tts may not contain any"
+  yo:
+    rule: "ё -> е on both sides (the ASR is inconsistent about ё)"
+
+# Rules for the text that is actually sent to the TTS (not for the normalizer).
+benchmark_text_charset:
+  allowed_letters: "Cyrillic only (а-я А-Я, ё allowed)"
+  forbidden: [digits, latin_letters]
+  allowed_punctuation: [".", ",", "!", "?", ":", ";", "—", "–", "-", "«", "»", "(", ")", "…"]
+  enforced_by: tests/test_benchmark.py
+
+# --------------------------------------------------------------------------
+# PROPOSED change, NOT active.  Requires A4 to implement it in
+# src/eval/normalize.py and A0 to sign off; it must land BEFORE the first
+# hidden run (PLAN.md §9.4 freezes the rule, not the file).
+# --------------------------------------------------------------------------
+proposed_v2:
+  status: PROPOSED
+  proposed_by: A2
+  proposed_at: "2026-08-28"
+  rule: drop_leading_one_before_scale
+  description: >
+    In the lenient variant, a most-significant triplet equal to 1 loses its
+    "один"/"одна" before the scale word: 1990 -> "тысяча девятьсот девяносто",
+    1000 -> "тысяча", 1000000 -> "миллион".  Non-leading and non-unit triplets
+    are untouched: 21000 stays "двадцать одна тысяча".
+  evidence: >
+    In the 1 631 766-word ROVER corpus "тысяча девятьсот" occurs 378 times and
+    "одна тысяча девятьсот" 0 times; "миллион" 251 times bare vs 4 times as
+    "один миллион".  629 of the 7599 digit runs in text_e2e (8.3 %) would get a
+    spurious "один"/"одна" insertion under the frozen rule.
+  implementation: "src/eval/normalize_spec_ref.py:number_to_russian_words_ref(drop_leading_one=True)"

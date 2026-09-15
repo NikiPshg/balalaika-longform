@@ -1,0 +1,97 @@
+# Frozen disfluency filter for RuLongTTS benchmark texts (PLAN.md §6.5).
+# Owner: A2.  Implementation: src/benchmark/disfluency.py (it loads this file and
+# asserts that its own compiled rules match, so the YAML cannot silently drift).
+#
+# Scope: this filter is applied ONLY to benchmark texts (data/benchmark/*.jsonl).
+# Training text keeps every disfluency (decision 2026-08-27, §6.5).
+#
+# Design rule imposed by the owner (decisions.md 2026-08-27): no hand-picked
+# sample_ids anywhere.  Every editing decision below is therefore expressed as a
+# *context rule over words*, not as a per-document exception list, so the same
+# rules keep working after the parquet is re-filtered and other roots are chosen.
+
+version: 1
+frozen_at: "2026-08-28"
+owner: A2
+
+# ---------------------------------------------------------------------------
+# 1. Hesitation sounds - always removed, never content.
+# ---------------------------------------------------------------------------
+hesitations_regex: "^(?:э+(?:-э+)*|м+(?:-м+)*|а+-а+(?:-а+)*|ы+|э-?эм|эм|гм|хм|мгм|угу|ага|мда)$"
+hesitations_examples: ["э", "э-э", "ээ", "м", "м-м", "ммм", "а-а", "эм", "угу", "ага"]
+
+# ---------------------------------------------------------------------------
+# 2. Discourse fillers.  Removed when they occur as a standalone token, except
+#    in the listed syntactic contexts where the same word is content.
+#    prev/next are the neighbouring word tokens, normalized (lowercase, ё->е).
+# ---------------------------------------------------------------------------
+discourse_fillers:
+  ну:        {keep_if_next: [], keep_if_prev: []}                 # particle only
+  вот:       {keep_if_next: [почему, зачем, кто, что, как, где, когда, такой, такая, такое, такие], keep_if_prev: []}
+  типа:      {keep_if_next: [], keep_if_prev: []}
+  короче:    {keep_if_next: [], keep_if_prev: []}                 # "короче говоря" -> both removed
+  значит:    {keep_if_next: [что, ли], keep_if_prev: [это, что, все, то, ничего, значить]}
+  ведь:      {keep_if_next: [], keep_if_prev: [], enabled: false} # NOT filtered: too often content
+multiword_fillers:
+  - [как, бы]
+  - [короче, говоря]
+  - [так, сказать]
+  - [скажем, так]
+
+# Speech restarts the prefix rule below cannot see, because their first member is
+# a frequent function word.  Added 2026-08-28 after the manual review of the
+# pilot roots ("почему вот так такая логика").  The first token is deleted.
+restart_bigrams:
+  - [так, такой]
+  - [так, такая]
+  - [так, такое]
+  - [так, такие]
+
+# ---------------------------------------------------------------------------
+# 3. Repetitions and truncations.
+# ---------------------------------------------------------------------------
+immediate_repeat:
+  enabled: true
+  # The first of the two identical tokens is deleted.
+  # Intensifier doublings that are normal written Russian are kept.
+  keep_pairs: [очень, самый, самая, самое, чуть, еле, давно]
+truncated_word:
+  # token written with a trailing hyphen in the ASR output: "прос- простите"
+  trailing_hyphen: true
+  # token that is a proper prefix of the next token: "эконо экономика"
+  prefix_of_next_min_len: 2
+  prefix_of_next_min_gap: 2
+  # ... but never when the short member is an ordinary function word.  Without
+  # this guard the rule deletes the preposition in "укладывалось по полочкам",
+  # "за закон", "как какой", "то только" (found in the manual review).
+  function_word_guard: [в, во, на, над, под, по, за, из, изо, от, ото, до, к, ко, с, со, о, об, обо, при, про, для, без, у,
+                        я, ты, он, она, оно, мы, вы, они, мне, тебе, ему, ей, нам, вам, им, меня, тебя, его, ее, нас, вас, их,
+                        себя, себе, а, и, но, да, же, ли, бы, не, ни, то, так, как, что, кто, где, куда, когда, откуда,
+                        зачем, почему, чем, или, либо, если, чтобы, хотя, пока, ведь, лишь, даже, уже, еще, вон,
+                        там, тут, тот, та, те, это, эта, эти, этот, весь, вся, все, сам, сама, само, сами,
+                        мой, моя, мое, твой, наш, ваш, свой, ну, вот, раз, потом, затем, тоже, также,
+                        очень, более, менее, много, мало, нет, есть, был, была, были, было, будет, быть]
+stutter_initial:
+  # ASR renders a stuttered onset as a doubled first letter: "Ррусская" -> "Русская"
+  enabled: true
+  min_len: 4
+  action: drop_duplicated_letter
+  # Ordinary Russian words start with these doubled consonants and are never
+  # stutters ("ввод", "вверх", "ввести", "ссылка", "ссора", "жжение").
+  excluded_onsets: [вв, сс, жж]
+
+# ---------------------------------------------------------------------------
+# 4. Post-edit tidying (deterministic, applied after every deletion).
+# ---------------------------------------------------------------------------
+post_edit:
+  drop_comma_left_orphaned_by_deletion: true   # "Ну, это" -> "Это"
+  recapitalize_sentence_start: true
+  collapse_whitespace: true
+
+# Applied by src/benchmark/build_pilot.py BEFORE the filter, not part of scan():
+# gigaam-v3-e2e-ctc capitalizes words at random inside a sentence.  A mid-sentence
+# capital is lowercased only when the identical token also occurs in lowercase in
+# the same document, so real proper nouns keep their capital.
+case_repair:
+  enabled: true
+  implementation: "src/benchmark/disfluency.py:repair_casing"

@@ -1,0 +1,90 @@
+{
+  "initial_checkpoint": "models/f5/russian/F5TTS_v1_Base/model_240000_inference.safetensors",
+  "manifest_sha256": "da25eeaefa9f32c8b86eff77d1d3047bfa3d348f7ad78586a94fd4337baf4429",
+  "dev_manifest_sha256": "d621d045071f000db6148860437e9dc2bfb85b80224277bb4ae37e8e3dd132c9",
+  "vocab_sha256": "2a05f992e00af9b0bd3800a8d23e78d520dbd705284ed2eedb5f4bd29398fa3c",
+  "updates": 18114,
+  "learning_rate": 1e-05,
+  "weight_decay": 0.01,
+  "warmup_fraction": 0.05,
+  "clip_grad": 1.0,
+  "seed": 0,
+  "dev_seed": 100000,
+  "max_duration_seconds": 1230.0,
+  "parent_order": "sorted parents shuffled by seed+pass",
+  "loss_weight": "actual mel frames / parent mel frames",
+  "precision": "bf16 autocast, float32 weights and AdamW states",
+  "ema": {
+    "package": "ema-pytorch",
+    "version": "0.8.3",
+    "beta": 0.9999,
+    "update_after_step": 100,
+    "update_every": 10,
+    "inv_gamma": 1.0,
+    "power": 0.6666666666666666,
+    "min_value": 0.0,
+    "include_online_model": false,
+    "allow_different_devices": false,
+    "use_foreach": false,
+    "update_model_with_ema_every": null,
+    "update_model_with_ema_beta": 0.0,
+    "move_ema_to_online_device": false,
+    "coerce_dtype": false,
+    "lazy_init_ema": false
+  },
+  "ema_counter_policy": "reset_for_new_sft_run",
+  "ema_initial_state": {
+    "step": 0,
+    "initted": false
+  },
+  "source_ema_history": {
+    "step": 2663074,
+    "initted": true
+  },
+  "cfm_objective": {
+    "sigma": 0.0,
+    "audio_drop_prob": 0.3,
+    "cond_drop_prob": 0.2,
+    "frac_lengths_mask": [
+      0.7,
+      1.0
+    ],
+    "mask_sampling": "one contiguous random span covering 70-100% of each item",
+    "conditioning_span": "remaining unmasked frames; absolute span scales with item length, as upstream"
+  },
+  "dev_weights": "ema",
+  "inference_weights": "ema",
+  "checkpoint_selection": "last planned parent update; no test selection",
+  "finite_failure_policy": "fail fast; diagnosed path relaunches managed separately",
+  "arguments": {
+    "checkpoint": "models/f5/russian/F5TTS_v1_Base/model_240000_inference.safetensors",
+    "vocab": "models/f5/russian/F5TTS_v1_Base/vocab.txt",
+    "manifest": "data/train/f5/short.jsonl",
+    "dev_manifest": "data/train/f5/dev_probe_long.jsonl",
+    "output_dir": "checkpoints/f5/short_ema",
+    "updates": 18114,
+    "learning_rate": 1e-05,
+    "weight_decay": 0.01,
+    "warmup_fraction": 0.05,
+    "clip_grad": 1.0,
+    "seed": 0,
+    "dev_seed": 100000,
+    "dev_every": 1000,
+    "save_every": 1000,
+    "max_wall_seconds": 86400.0,
+    "stop_after_update": 0,
+    "max_duration_seconds": 1230.0,
+    "upstream": "third_party/F5-TTS",
+    "resume": "checkpoints/f5/short_ema/latest.pt",
+    "skip_initial_dev": false
+  },
+  "parameters": 337096804,
+  "parent_count": 6038,
+  "source_checkpoint_sha256": "376c29a569c691375a4cd19b8254497204fcd2127ca7168b12cb2b78fa8f54e3",
+  "torch_version": "2.11.0+cu128",
+  "device": "NVIDIA RTX 6000 Ada Generation",
+  "runtime": {
+    "physical_gpu": 1,
+    "logical_device": "cuda:0"
+  }
+}

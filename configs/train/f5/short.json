@@ -1,0 +1,18 @@
+{
+  "checkpoint": "models/f5/russian/F5TTS_v1_Base/model_240000_inference.safetensors",
+  "vocab": "models/f5/russian/F5TTS_v1_Base/vocab.txt",
+  "manifest": "data/train/f5/short.jsonl",
+  "dev_manifest": "data/train/f5/dev_probe_long.jsonl",
+  "output_dir": "checkpoints/f5/short_ema",
+  "updates": 18114,
+  "learning_rate": 1e-05,
+  "weight_decay": 0.01,
+  "warmup_fraction": 0.05,
+  "clip_grad": 1.0,
+  "seed": 0,
+  "dev_seed": 100000,
+  "dev_every": 1000,
+  "save_every": 1000,
+  "max_duration_seconds": 1230,
+  "upstream": "third_party/F5-TTS"
+}

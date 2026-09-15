@@ -1,0 +1,84 @@
+# Frozen CosyVoice3 baseline configuration (A3, 2026-08-27). PLAN.md §4, §3.5, §10.
+# Every value below was read from the repo / model snapshot; line references are in
+# reports/cosyvoice3_audit.md. Do not edit without a decisions.md entry.
+
+model:
+  model_id: FunAudioLLM/Fun-CosyVoice3-0.5B-2512
+  model_revision: 29e01c4e8d000f4bcd70751be16fa94bf3d85a18      # PLAN §4.1 audited snapshot
+  model_dir: models/cosyvoice3
+  repo_root: third_party/CosyVoice
+  repo_revision: 074ca6dc9e80a2f424f1f74b48bdd7d3fea531cc       # git rev-parse HEAD (+ local diff in reports/cosyvoice_local_diff.patch; training-only files)
+  weights: llm.pt            # primary; E5 uses llm.rl.pt; E2/E3 pass an SFT checkpoint path
+  flow_weights: flow.pt
+  hift_weights: hift.pt
+  speech_tokenizer: speech_tokenizer_v3.onnx     # 25 tokens/s (GPU 1, from the smoke/pilot manifests: 11.522 s -> 288 tok, 11.680 s -> 292 tok, 12.044 s -> 301 tok)
+  speaker_encoder: campplus.onnx                  # 192-d x-vector, CPUExecutionProvider (frontend.py:45)
+  qwen_backbone: CosyVoice-BlankEN                 # Qwen2, 24 layers, hidden 896, 2 KV heads, max_position_embeddings 32768, rope_theta 1e6
+  fp16: false                                      # CosyVoice3(model_dir, fp16=False) -> autocast disabled in llm_job/token2wav
+  load_trt: false
+  load_vllm: false
+  text_frontend_backend: ""   # pin frontend.text_frontend to '' (no ttsfrd, no wetext); see audit §2 — only inflect spell_out_number + split_paragraph remain in the official path
+  llm_dtype: float32
+  attn_implementation: sdpa   # transformers 4.51.3 default for Qwen2ForCausalLM.from_pretrained
+  max_position_embeddings: 32768
+  speech_token_size: 6561     # sos=6561, eos=6562, task_id=6563, fill=6564 (llm.py:681-684); stop_token_ids = 6561..6760 (llm.py:703)
+  instruct_prefix: "You are a helpful assistant.<|endofprompt|>"   # llm.py:479 asserts token 151646 in prompt_text+text
+  flow_noise_buffer_sec: 900  # STOCK = 300 (flow_matching.py:200 rand_noise = randn([1,80,50*300]); non-stream flow cannot render > 300 s incl. prompt: mask_in[:] = mask fails at :104).
+                              # The adapter extends the buffer on the instance by appending seed-0 noise (outputs <= 300 s stay bit-identical to stock, verified byte-for-byte).
+                              # ACCEPTED by the Lead in reports/decisions.md 2026-08-28; NATIVE modes only (see official_mode_overrides below).
+  hift_noise_buffer_sec: 900  # STOCK = 300 (generator.py:226 SineGen2.sine_waves = rand(1, 300*24000, 9); :356 SourceModuleHnNSF.uv = rand(1, 300*24000, 1);
+                              # :310 / :372 slice them to the waveform length -> causal HiFT cannot vocode > 300 s either: measured RuntimeError at 17 280 000 vs 7 200 000 samples).
+                              # Same instance-level extension (uniform noise, seed 0). Both caps are checked by cosyvoice3_config_check at load time.
+
+# E0 (official_split) overrides, applied by scripts/run_generation.py --mode official.
+# Lead decision 2026-08-28 (reports/decisions.md): the 900 s extension is a NATIVE-mode measure; E0 splits the
+# text into <= 80-token chunks, never approaches 300 s, and would only pay ~0.9 GB of CPU RAM per process for it.
+# The value actually in effect is measured from the live objects into every run manifest
+# (flow_noise_buffer_sec / hift_noise_buffer_sec / noise_buffers_extended).
+official_mode_overrides:
+  flow_noise_buffer_sec: 300   # stock (flow_matching.py:200)
+  hift_noise_buffer_sec: 300   # stock (generator.py:226, :356)
+
+# Repo-default sampling, verbatim from pretrained_models/Fun-CosyVoice3-0.5B/cosyvoice3.yaml:32-36 and llm.py:468-470
+generation:
+  sampling_fn: cosyvoice.utils.common.ras_sampling     # cosyvoice3.yaml:32
+  top_p: 0.8                                            # cosyvoice3.yaml:33
+  top_k: 25                                             # cosyvoice3.yaml:34
+  win_size: 10                                          # cosyvoice3.yaml:35  (repetition-aware window)
+  tau_r: 0.1                                            # cosyvoice3.yaml:36  (>= win_size*tau_r repeats -> resample from full softmax)
+  sampling: 25                                          # llm.py:468 (passed to ras_sampling; unused by it, only by random_sampling)
+  max_token_text_ratio: 20                              # llm.py:469 -> max_len = int(text_tokens * 20); hitting it = loop_cap
+  min_token_text_ratio: 2                               # llm.py:470 -> EOS masked for the first int(text_tokens * 2) steps
+  speed: 1.0
+  stream: false                                         # non-stream: flow+hift run once on the full token sequence (model.py:376-387)
+  flow_n_timesteps: 10                                  # flow.py CausalMaskedDiffWithDiT.inference: n_timesteps=10 (hard-coded)
+  flow_inference_cfg_rate: 0.7                          # cosyvoice3.yaml:62
+  silent_token_filter: 5                                # model.py:102: >5 consecutive FSQ silent/breath tokens are dropped before flow
+  official_text_frontend: true                          # E0 only: stock inference_zero_shot(text_frontend=True) default
+  watchdog:
+    enabled: true
+    max_generated_tokens: 30000        # absolute operational cap = 20 min of speech at 25 Hz (> 15 min study ceiling); status loop_cap
+    expected_factor: null              # optional: cap at expected_factor * expected_tokens (expected = 25 Hz * human duration, else 5.0 * text tokens). null = only the absolute cap, so the repo's own max_len (20x) is what a runaway hits first
+    expected_tokens_per_text_token: 5.0   # measured on smoke runs (audit §5); used only when no human duration is given
+    max_wall_seconds: 2400             # status timeout
+    enforce_context_budget: true       # stop when input + generated >= 32768 - margin; status context_limit (native mode only)
+    context_safety_margin_tokens: 0
+
+seeds: [0]
+
+prompt:
+  # frontend_zero_shot (frontend.py:168-189): the prompt wav is loaded twice from disk:
+  #   16 kHz mono -> whisper log-mel (128) -> speech_tokenizer_v3 (25 Hz)  and campplus fbank (frontend.py:95-118)
+  #   24 kHz mono -> mel_spectrogram(n_fft 1920, hop 480) = 50 Hz for flow conditioning (frontend.py:120-125)
+  # then trimmed so that mel_frames == 2 * speech_tokens (frontend.py:174-178).
+  resample_for_tokenizer_hz: 16000
+  resample_for_flow_hz: 24000
+  max_prompt_wav_sec: 30              # frontend.py:97 assert -> status hard_input_limit
+  ref_text_normalization: none        # ref_text is used verbatim (native). Official path applies text_normalize(split=False).
+
+output:
+  sample_rate: 24000
+  wav_subtype: PCM_16
+  never_overwrite: true
+  save_partial_on_watchdog: true
+  save_generated_token_ids: true

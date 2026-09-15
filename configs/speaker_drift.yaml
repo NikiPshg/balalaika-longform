@@ -1,0 +1,90 @@
+# Frozen speaker-drift settings for RuLongTTS (PLAN.md §9.5 voice drift, §9.3 T_voice).
+#
+# Owner: A5 (Speaker and Audio Quality). Implementation: src/eval/speaker_drift.py.
+# Tests: tests/test_speaker_drift.py. Evidence: reports/speaker_thresholds.md,
+# results/v31_drift/calibration.json (produced by
+# scripts/a5_calibrate_speaker_threshold.py).
+#
+# PRE-REGISTERED. The threshold rule below was written and committed to the script
+# BEFORE any generated audio was scored with this encoder: the calibration script reads
+# only data/manifests/{dev,test}.jsonl and data/references/references.jsonl, i.e. human
+# recordings, and refuses to see outputs/. PLAN §3.5 / §9.3: it may be revised on dev
+# only, and only with an entry in reports/decisions.md that says so.
+
+version: 1
+frozen_at: "2026-08-30"
+owner: A5
+decision_ref: "reports/decisions.md, A5 2026-08-30 (speaker encoder + T_voice threshold)"
+
+# ---------------------------------------------------------------------- speaker encoder
+# PLAN §9.5 requires ONE speaker encoder independent of the campplus the model itself
+# conditions on. This is WeSpeaker ResNet34-TSTP-emb256 (r-vector), VoxCeleb2-dev,
+# CC-BY-4.0: different architecture, different training corpus, different embedding size
+# (256 vs campplus 192). src/eval/spk_campplus.py remains the SECONDARY measure.
+encoder:
+  repo: "Wespeaker/wespeaker-voxceleb-resnet34-LM"
+  revision: "f0c48c298fd835726c27956a5d617bad7115627e"
+  file: "voxceleb_resnet34_LM.onnx"
+  sha256: "7bb2f06e9df17cdf1ef14ee8a15ab08ed28e8d0ef5054ee135741560df2ec068"
+  local_path: ".cache/hf/models--Wespeaker--wespeaker-voxceleb-resnet34-LM/snapshots/f0c48c298fd835726c27956a5d617bad7115627e/voxceleb_resnet34_LM.onnx"
+  emb_dim: 256
+  runtime: "onnxruntime CPUExecutionProvider"
+  features: "80-bin Kaldi fbank 25 ms / 10 ms on the int16-scaled waveform, then CMN over time (wespeaker/cli/speaker.py::compute_fbank)"
+
+# ------------------------------------------------------------------------- windowing
+# PLAN §9.5: voiced windows 10-15 s, hop 5 s, each compared with the enrollment.
+# The windows are cut on the VOICED timeline (audio_qc.vad_mask first, silence dropped),
+# so a window always carries 10 s of speech; A5 acceptance criterion "silent windows
+# excluded" is met by construction rather than by a post-hoc filter.
+window_sec: 10.0
+hop_sec: 5.0
+edge_sec: 30.0            # first-30-s / last-30-s medians (PLAN §9.5)
+
+# --------------------------------------------------------------------------- T_voice
+# T_voice fires at the START of the first run of `t_voice_min_run` consecutive windows
+# whose cosine to the enrollment is below `t_voice_similarity_min` (PLAN §9.3: "фиксировать
+# event только при устойчивом превышении в нескольких окнах"). An item that never crosses
+# is right-censored, not zero.
+#
+# The threshold comes from the PRE-REGISTERED rule in
+# scripts/a5_calibrate_speaker_threshold.py: the midpoint of the gap between the smallest
+# same-speaker and the largest different-speaker window similarity measured on natural
+# dev/test audio; when the two distributions overlap (which they do, by 0.093), the rule
+# falls back to the pooled EER threshold, rounded to two decimals.
+#
+# Measured on 481 same-speaker and 1221 different-speaker natural windows
+# (results/v31_drift/calibration.json, 2026-08-30):
+#   same-speaker    min 0.4129   p01 0.6347   p05 0.7316   median 0.8420
+#   different-spk   max 0.5059   p99 0.4250   p95 0.3522   median 0.17775
+#   at 0.50: 1 of 481 same-speaker windows below, 3 of 1221 different-speaker at or above
+#   (reference arm alone -- the 3 enrollment voices -- is cleanly separated:
+#    same min 0.6927, different max 0.5054, EER 0.0)
+# Acceptance test (the one that matters): the full pipeline at this threshold raises
+# T_voice on 0 of 27 natural long-form human recordings (3.74 h) and 0 of the 12
+# reference-speaker recordings. A threshold that fires on natural speech is useless.
+t_voice_similarity_min: 0.50
+t_voice_min_run: 3
+
+# Natural-variation band for the reported statistics, same 27 natural long recordings.
+# Published so a generated delta/slope can be read against what human speech does:
+#   delta   median +0.0138   p05 -0.0882
+#   slope   median +0.0004/min   p05 -0.0133/min   p95 +0.0090/min
+natural_delta_p05: -0.088202
+natural_slope_p05_per_min: -0.013281
+natural_slope_p95_per_min: 0.008989
+
+# --------------------------------------------------------------------------- audio I/O
+# 16 kHz mono. `.venv-eval` has no torchaudio, so the resampler is soxr VHQ; that is not
+# the resampler CosyVoice uses and it is not bit-identical to it (reports/
+# speaker_thresholds.md §2 quotes the measured embedding cosine between the two). The
+# calibration and the measurement use the SAME resampler, so the threshold and the scores
+# are on one scale.
+target_sr: 16000
+resampler: "soxr_vhq"
+
+# The enrollment embedding is built from the MASTER wav (`wav_path` in
+# data/references/references.jsonl) resampled by the same code path as the outputs, NOT
+# from the stored `wav16k_path` copy: that copy was written by make_references.py with
+# torchaudio's resampler, and mixing the two resamplers inside one cosine costs up to
+# 0.09 on the male reference (measured, reports/speaker_thresholds.md §2).
+enrollment_source: "wav_path"

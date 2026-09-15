@@ -1,0 +1,30 @@
+# VC-E3P: VoxCPM2-2B full SFT on the long_punct arm (E12 prereg, budget-matched to Q-E3P).
+# Official scripts/train_voxcpm_finetune.py params (conf/voxcpm_v2/voxcpm_finetune_all.yaml
+# lr/wd/clip) run through our local copy scripts/train_voxcpm_finetune_local.py
+# (reports/voxcpm_local_edits.patch). Env for the run: VOXCPM_GRAD_CKPT=1
+# VOXCPM_SAVE_OPTIMIZER=0 VOXCPM_SAVE_TOTAL_LIMIT=1 PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+pretrained_path: models/voxcpm2
+train_manifest: data/train/voxcpm/vce3p_lat.jsonl
+val_manifest: data/train/voxcpm/dev_long_lat.jsonl
+sample_rate: 16000
+out_sample_rate: 48000
+batch_size: 1
+grad_accum_steps: 19          # 19 units/step x mean 85.177 s = 1618.4 s/step (budget match)
+num_workers: 4               # owner rule 2026-09-05: RAM budget; batch order/composition is sampler-determined (seed), independent of worker count
+num_iters: 1139               # 21641 unit-forwards = 3.670 passes over the 5897 kept units
+log_interval: 10
+valid_interval: 300
+save_interval: 300
+learning_rate: 0.00001        # official conf/voxcpm_v2/voxcpm_finetune_all.yaml
+weight_decay: 0.01
+warmup_steps: 57              # 5% of 1139 steps (series convention, Lead greenlight 2026-09-02)
+max_steps: 1139
+max_batch_tokens: 8192        # official filter: drops the 144/6041 units whose packed
+                              # length exceeds the model's 8192-position budget (18.2% of
+                              # long-arm seconds; documented E12 deviation, see budget_match)
+max_grad_norm: 1.0
+save_path: exp/voxcpm/vce3p
+tensorboard: exp/voxcpm/vce3p/tb
+lambdas:
+  loss/diff: 1.0
+  loss/stop: 1.0

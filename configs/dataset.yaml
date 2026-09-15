@@ -1,0 +1,49 @@
+# Dataset location and metadata layout (Lead, decisions.md 2026-08-29 item 1).
+# Every script that touches the corpus reads this file through
+# src/data/dataset_config.py::load_dataset_config(); nothing hard-codes the path.
+#
+# Overrides (for tests / a future re-filter):
+#   DATASET_CONFIG=<path to another yaml>     use a different config file
+#   DATASET_ROOT=<dir>                        override `root` only (same layout)
+version: v3.1
+root: data/corpus
+parquet: balalaika.parquet            # relative to root
+audio_dir: audio                      # audio/<video_id>/<start>_<end>_audio_<video_id>.flac + .json sidecar
+readme: README.md
+filter_summary: filter_summary.csv
+
+metadata:
+  layout: v3                          # v1 layout (metadata/youtube_api_metadata.json) is NOT supported any more
+  selection_plan: metadata/selection_plan.parquet   # columns filepath, video_id, channel, duration, root, bucket
+  catalog_glob: metadata/catalog_*.json             # catalog_<label>.json: list of {id,title,published,lang,dur,cc}
+  infojson_dir: metadata/infojson                   # <video_id>.info.json (yt-dlp): channel_id, channel, license, title
+  subtitles_dir: metadata/subtitles                 # <video_id>.<lang>.vtt (not used by the pipeline)
+
+channel:
+  # Unit of the split = YouTube channel (PLAN §6.2).
+  # The catalog label of a video comes from selection_plan.parquet (it is identical to the
+  # catalog_<label>.json the video is listed in). The parquet column `channel` is NOT used:
+  # on v3.1 it disagrees with the catalogs for 75 % of the rows and takes several values
+  # inside one video (see reports/dataset_stats.md §0 and all_build_stats.json).
+  label_source: selection_plan
+  # Videos whose label is `other_label` are not one channel but a bag of unrelated YouTube
+  # channels; they are keyed by the YouTube channel_id of their infojson as
+  # `other:<channel_id>` (channel_source = infojson).
+  other_label: other
+  other_prefix: "other:"
+
+license:
+  # catalog `cc: true`  -> creativeCommon (license_source = catalog)
+  # infojson `license`  -> normalised with build_manifest.norm_license (license_source = infojson)
+  # both present        -> must agree (conflicts are counted in all_build_stats.json)
+  # neither             -> unknown
+  vocabulary: [creativeCommon, youtube, unknown]
+
+text:
+  rover_key: rover                    # sidecar field -> manifest `text`
+  e2e_key: gigaam-v3-e2e-ctc          # sidecar asr[...] -> manifest `text_e2e`; asr_ts[...] -> word timestamps
+  asr_models: [gigaam-v3-e2e-ctc, gigaam-v3-ctc, gigaam-v3-rnnt]   # ROVER voters (measured 2026-08-29, all_build_stats.json asr_model_sets): 11.0 % segments 3 GigaAM voters only, 82.4 % + vosk-model-ru, 6.6 % + t-one; GigaAM always a voting majority
+
+segments:
+  min_duration_sec: 30
+  max_duration_sec: 900

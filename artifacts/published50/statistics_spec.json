@@ -1,0 +1,198 @@
+{
+  "specification_date": "2026-09-13",
+  "design": "data/benchmark.jsonl",
+  "source_cluster_field": "book_id",
+  "resamples": 10000,
+  "seed": 20260913,
+  "alpha": 0.05,
+  "primary_cells": [
+    "B4"
+  ],
+  "arms": [
+    {
+      "arm_id": "cosy_base",
+      "backbone": "CosyVoice3",
+      "family": "ar",
+      "protocol": "continuous",
+      "results": "results/cosy_base/per_item.jsonl"
+    },
+    {
+      "arm_id": "cosy_short",
+      "backbone": "CosyVoice3",
+      "family": "ar",
+      "protocol": "continuous",
+      "results": "results/cosy_short/per_item.jsonl"
+    },
+    {
+      "arm_id": "cosy_long",
+      "backbone": "CosyVoice3",
+      "family": "ar",
+      "protocol": "continuous",
+      "results": "results/cosy_long/per_item.jsonl"
+    },
+    {
+      "arm_id": "cosy_long_punct",
+      "backbone": "CosyVoice3",
+      "family": "ar",
+      "protocol": "continuous",
+      "results": "results/cosy_long_punct/per_item.jsonl"
+    },
+    {
+      "arm_id": "qwen_base",
+      "backbone": "Qwen3-TTS",
+      "family": "ar",
+      "protocol": "continuous",
+      "results": "results/qwen_base/per_item.jsonl"
+    },
+    {
+      "arm_id": "qwen_short",
+      "backbone": "Qwen3-TTS",
+      "family": "ar",
+      "protocol": "continuous",
+      "results": "results/qwen_short/per_item.jsonl"
+    },
+    {
+      "arm_id": "qwen_long",
+      "backbone": "Qwen3-TTS",
+      "family": "ar",
+      "protocol": "continuous",
+      "results": "results/qwen_long/per_item.jsonl"
+    },
+    {
+      "arm_id": "vox_base",
+      "backbone": "VoxCPM2",
+      "family": "ar",
+      "protocol": "continuous",
+      "results": "results/vox_base/per_item.jsonl"
+    },
+    {
+      "arm_id": "vox_short",
+      "backbone": "VoxCPM2",
+      "family": "ar",
+      "protocol": "continuous",
+      "results": "results/vox_short/per_item.jsonl"
+    },
+    {
+      "arm_id": "vox_long",
+      "backbone": "VoxCPM2",
+      "family": "ar",
+      "protocol": "continuous",
+      "results": "results/vox_long/per_item.jsonl"
+    },
+    {
+      "arm_id": "f5_base",
+      "backbone": "F5-TTS",
+      "family": "flow",
+      "protocol": "continuous",
+      "results": "results/f5_base/per_item.jsonl"
+    },
+    {
+      "arm_id": "f5_short",
+      "backbone": "F5-TTS",
+      "family": "flow",
+      "protocol": "continuous",
+      "results": "results/f5_short/per_item.jsonl"
+    },
+    {
+      "arm_id": "f5_long",
+      "backbone": "F5-TTS",
+      "family": "flow",
+      "protocol": "continuous",
+      "results": "results/f5_long/per_item.jsonl"
+    }
+  ],
+  "contrasts": [
+    {
+      "arm_a": "cosy_long",
+      "arm_b": "cosy_short",
+      "role": "primary"
+    },
+    {
+      "arm_a": "qwen_long",
+      "arm_b": "qwen_short",
+      "role": "primary"
+    },
+    {
+      "arm_a": "vox_long",
+      "arm_b": "vox_short",
+      "role": "primary"
+    },
+    {
+      "arm_a": "f5_long",
+      "arm_b": "f5_short",
+      "role": "primary"
+    },
+    {
+      "arm_a": "cosy_long",
+      "arm_b": "cosy_base",
+      "role": "secondary"
+    },
+    {
+      "arm_a": "qwen_long",
+      "arm_b": "qwen_base",
+      "role": "secondary"
+    },
+    {
+      "arm_a": "vox_long",
+      "arm_b": "vox_base",
+      "role": "secondary"
+    },
+    {
+      "arm_a": "f5_long",
+      "arm_b": "f5_base",
+      "role": "secondary"
+    },
+    {
+      "arm_a": "cosy_long_punct",
+      "arm_b": "cosy_long",
+      "role": "secondary"
+    },
+    {
+      "arm_a": "cosy_long_punct",
+      "arm_b": "cosy_base",
+      "role": "secondary"
+    }
+  ],
+  "report_content_only": true,
+  "descriptive_cohort_cells": [
+    {
+      "bucket": "B4",
+      "voice_cohort": "new_external_heldout"
+    }
+  ],
+  "design_sha256": "c2de32c4458ec4a7776ca7364eb0f5c091cce1ad2443c28240c492bc7642923b",
+  "planned_attempts": 50,
+  "selection_protocol": "data/selection_protocol.json",
+  "selection_protocol_sha256": "05af216083325103982a9df3f212569bb5167858123bee9a60ef6639ee3e4102",
+  "subset_freeze": "data/SUBSET_FREEZE.json",
+  "source_design": "../data/benchmark.jsonl",
+  "source_design_sha256": "879410e084005514718eeb70432c6c7c8c37cb2ebdd78983b15feee34072630b",
+  "allow_source_superset": false,
+  "report_groups": {
+    "main13": [
+      "cosy_base",
+      "cosy_short",
+      "cosy_long",
+      "cosy_long_punct",
+      "qwen_base",
+      "qwen_short",
+      "qwen_long",
+      "vox_base",
+      "vox_short",
+      "vox_long",
+      "f5_base",
+      "f5_short",
+      "f5_long"
+    ],
+    "primary8": [
+      "cosy_short",
+      "cosy_long",
+      "qwen_short",
+      "qwen_long",
+      "vox_short",
+      "vox_long",
+      "f5_short",
+      "f5_long"
+    ]
+  }
+}

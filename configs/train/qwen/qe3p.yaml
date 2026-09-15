@@ -1,0 +1,110 @@
+# E10 Q-E3P: Long+punct all_talker SFT of Qwen3-TTS-12Hz-1.7B-Base (A10-qwen, 2026-08-31).
+# Prereg: decisions.md 2026-08-31 (E10 + P3 greenlight). Design: reports/qwen_p3_plan.md.
+# Budget match vs Q-E2P (§4): 3 passes over 6041 long units (170.64 h ≈ 7.68 M target
+# frames/pass); step = 1 unit x accum 16 ≈ 20.3 k frames -> max_steps 1133, warmup 5 %.
+# Launch: lora_finetuning/trl/launch.sh sft <this file> (fork venv; local JSONL, no HF streaming).
+
+model_path: models/qwen3-tts
+model_revision: fd4b254389122332181a7c3db7f27e918eec64e3
+attn_implementation: sdpa
+model_dtype: float32               # prereg: all_talker requires fp32 master weights
+save_final_model: true
+
+dataset_name: balalaika-v31-qwen-prepared-long-punct   # informational; data come from the local file below
+dataset_split: train
+dataset_revision: local-v31
+dataset_format: qwen_prepared_full_utterance
+dataset_data_file: data/train/qwen/qe3p-shard*.jsonl  # 8 shards -> 8 dataloader workers (Silero stress parallelism; single file = 1 worker)
+streaming: true
+shuffle_buffer: 256
+stream_preflight_rows: 64
+validation_samples: 32             # = the 32 dev_long_punct rows front-loaded in the JSONL
+validation_encode_batch_size: 8
+
+codec_fps: 12.5                    # true tokenizer rate (24000/1920); arg default 12.0 is wrong
+min_duration_sec: 25.0
+max_duration_sec: 905.0
+min_prefix_sec: 3.0
+max_prefix_sec: 8.0
+min_continuation_sec: 2.0
+min_words: 4
+max_text_chars: 16000              # our longest unit text = 15 562 chars
+min_asr_agreement: 0.0             # v3.1 curation already gated quality; rows carry the REAL
+                                   # per-parent asr_consistency/100 for provenance
+prepared_orientation: prefix_reference
+prepared_profile: balanced
+prepared_boundary_type: punctuation
+prepared_boundary_tier: primary
+prepared_text_source: rover_punctuated_accented
+prepared_deduplicate_consecutive: true
+
+training_scope: all_talker         # prereg: BOTH transformers train (owner's grabli guard)
+code_predictor_loss_weight: 1.0
+
+output_dir: exp/qwen/qe3p
+logging_dir: exp/qwen/qe3p/logs
+run_name: qe3p-long-punct
+project: qwen3-tts
+report_to:
+  - trackio
+trackio_space_id: null
+
+do_train: true
+do_eval: true
+resume_from_checkpoint: null
+seed: 0
+max_steps: 1133
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+gradient_accumulation_steps: 16
+learning_rate: 1.0e-5
+weight_decay: 0.01
+warmup_steps: 57
+lr_scheduler_type: cosine
+optim: adamw_torch_fused
+max_grad_norm: 1.0
+bf16: true
+fp16: false
+tf32: true
+gradient_checkpointing: true       # REQUIRED (probe: without it OOM from 300 s units)
+gradient_checkpointing_kwargs:
+  use_reentrant: false
+
+logging_strategy: steps
+logging_steps: 10
+eval_strategy: steps
+eval_steps: 200
+eval_on_start: true
+save_strategy: steps
+save_steps: 300                    # staggered between arms so saves rarely overlap (disk transient)
+save_total_limit: 1                # rotating checkpoint, newest only
+save_only_model: true              # disk rule (coordinator 2026-08-31): full fp32+optimizer trainer
+                                   # checkpoints are ~30 GB and two arms cannot fit; rotating
+                                   # checkpoints keep the MODEL only (~8 GB). Accepted tradeoff:
+                                   # crash recovery restarts the optimizer from the newest model
+                                   # checkpoint instead of a true trainer resume.
+dataloader_num_workers: 8
+dataloader_prefetch_factor: 1   # 2->1 after try2 died at step ~161: a worker was OOM-killed (RAM, swap full); halves buffered batches
+dataloader_persistent_workers: true
+dataloader_pin_memory: true
+remove_unused_columns: false
+average_tokens_across_devices: false
+accelerator_config:
+  dispatch_batches: false
+  split_batches: false
+
+dataset_kwargs:
+  skip_prepare_dataset: true
+max_length: null
+packing: false
+padding_free: false
+loss_type: nll
+use_liger_kernel: false
+label_smoothing_factor: 0.0
+
+generate_audio: false              # listening probes need their ASR/ref assets; our eval is the
+asr_enabled: false                 # standard external pipeline on the final checkpoint instead
+hf_upload_samples: false
+
+push_to_hub: false
+hub_model_id: null

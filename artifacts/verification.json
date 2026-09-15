@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "published50_attempts": 650,
+  "arms": 13,
+  "all_reported_cells_and_intervals_match": true,
+  "bootstrap_resamples": 10000,
+  "window_metrics_attempts": 650,
+  "training_or_synthesis_rerun": false,
+  "table1": "table1_splits.csv",
+  "table2": "table2_two_voice.csv",
+  "table3": "published50/main_b4.csv",
+  "environment": "Fresh isolated Python environment; only requirements-review.txt installed, no torch or upstream TTS model packages.",
+  "pytest": {
+    "passed": 247,
+    "skipped": 3,
+    "failed": 0
+  },
+  "corpus_restore_check": {
+    "samples": 1,
+    "original_audio_sha256_matched": true
+  },
+  "reference_voices": 21
+}

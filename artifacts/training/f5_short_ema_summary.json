@@ -1,0 +1,12 @@
+{
+  "state": "complete",
+  "updates": 18114,
+  "planned_updates": 18114,
+  "ledger": {
+    "audio_seconds": 1836949.8761224623,
+    "mel_frames": 172273830,
+    "windows": 85281,
+    "parent_updates": 18114
+  },
+  "elapsed_seconds": 18157.053614003
+}

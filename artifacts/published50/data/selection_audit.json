@@ -1,0 +1,51 @@
+{
+  "examples": 50,
+  "work_clusters": 22,
+  "root_passages": 22,
+  "voices": 21,
+  "bucket_counts": {
+    "B2": 14,
+    "B4": 22,
+    "B0": 14
+  },
+  "cohort_counts_by_bucket": {
+    "B0": {
+      "new_external_heldout": 7,
+      "previously_evaluated_heldout": 7
+    },
+    "B2": {
+      "previously_evaluated_heldout": 7,
+      "new_external_heldout": 7
+    },
+    "B4": {
+      "previously_evaluated_heldout": 11,
+      "new_external_heldout": 11
+    }
+  },
+  "voice_counts": {
+    "ref_lv_2671": 3,
+    "ref_lv_2826": 3,
+    "ref_lv_3056": 3,
+    "ref_lv_4091": 3,
+    "ref_lv_4372": 3,
+    "ref_lv_4471": 3,
+    "ref_lv_5397": 4,
+    "ref_lv_5548": 3,
+    "ref_r01": 2,
+    "ref_r02": 2,
+    "ref_r03": 2,
+    "ref_r04": 2,
+    "ref_r05": 2,
+    "ref_r06": 1,
+    "ref_r07": 2,
+    "ref_r08": 2,
+    "ref_r09": 2,
+    "ref_r10": 2,
+    "ref_r11": 2,
+    "ref_r12": 2,
+    "ref_r13": 2
+  },
+  "sum_squared_voice_counts": 128,
+  "all_rows_unchanged": true,
+  "all_shorter_texts_prefix_their_selected_B4": true
+}

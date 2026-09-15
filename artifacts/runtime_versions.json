@@ -1,0 +1,52 @@
+{
+  "note": "Installed versions read from retained training environments at code packaging time; not a claim of fully locked historical environments.",
+  "environments": {
+    "cosyvoice": {
+      "python": "3.10.20",
+      "torch": "2.3.1",
+      "torchaudio": "2.3.1+cu121",
+      "transformers": "4.51.3",
+      "datasets": "3.6.0",
+      "onnxruntime-gpu": "1.18.0",
+      "hyperpyyaml": "1.2.3",
+      "diffusers": "0.29.0"
+    },
+    "qwen": {
+      "python": "3.13.12",
+      "torch": "2.11.0+cu128",
+      "torchaudio": "2.11.0+cu128",
+      "transformers": "4.57.3",
+      "accelerate": "1.12.0",
+      "datasets": "5.0.0",
+      "trl": "0.27.0",
+      "silero-stress": "1.4",
+      "trackio": "0.20.2",
+      "onnx-asr": "0.12.0",
+      "peft": "0.19.1"
+    },
+    "voxcpm": {
+      "python": "3.12.13",
+      "torch": "2.10.0",
+      "torchaudio": "2.10.0",
+      "transformers": "5.3.0",
+      "datasets": "3.6.0",
+      "argbind": "0.3.9"
+    },
+    "f5": {
+      "python": "3.13.12",
+      "torch": "2.11.0+cu128",
+      "torchaudio": "2.11.0+cu128",
+      "transformers": "4.57.3",
+      "accelerate": "1.12.0",
+      "datasets": "5.0.0",
+      "trl": "0.27.0",
+      "silero-stress": "1.4",
+      "trackio": "0.20.2",
+      "onnx-asr": "0.12.0",
+      "ema-pytorch": "0.8.3",
+      "vocos": "0.1.0",
+      "f5-tts": "1.1.22",
+      "peft": "0.19.1"
+    }
+  }
+}

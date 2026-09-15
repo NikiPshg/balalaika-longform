@@ -1,0 +1,93 @@
+# Frozen recipe for the E8 «Robust-20» benchmark (reports/decisions.md 2026-08-31,
+# «ПРЕРЕГИСТРАЦИЯ E8 "Robust-20"»).  Owner: A2-robust.
+#
+# Implementation: src/benchmark/build_robust.py ->
+#   data/benchmark/robust.jsonl + data/benchmark/robust_stats.json
+#   data/references/references_robust.jsonl + data/references/robust/ref_r*.wav
+#   reports/benchmark_robust_composition.md
+#
+# Text rules are NOT redefined here: the builder loads configs/benchmark_pilot.yaml
+# and reuses its frozen `buckets`, `dataset_roots` (prefix_start, latin table,
+# min_asr_consistency, selection_window_sec), `tokenizer`, `context_occupancy`,
+# `normalization` and the charset-S1 implementation in src/benchmark/disfluency.py
+# verbatim.  Reference QC comes verbatim from src/eval/make_references.py (GATE,
+# stage1/stage2, gate_and_score); only the window length is the one the E8
+# pre-registration fixes (5-10 s instead of the A5 default 8-15 s).
+version: 1
+frozen_at: "2026-08-31"
+owner: A2-robust
+decision_ref: "reports/decisions.md 2026-08-31 «ПРЕРЕГИСТРАЦИЯ E8 Robust-20»"
+pilot_rules: configs/benchmark_pilot.yaml
+
+robust:
+  n_voices_target: 20
+  max_voices_per_channel: 2
+  pairwise_campplus_cosine_max: 0.70   # strict: EVERY pair of chosen voices below this
+  min_b4_voices_target: 16             # pre-registered target; if the data cannot supply
+                                       # it the builder reports the shortfall, it never
+                                       # weakens a gate to reach the number
+  voice_id_format: "ref_r{rank:02d}"
+  # selection order among admissible voices (greedy, subject to the channel cap and the
+  # cosine gate): B4-capable first, then split (test before dev, per the
+  # pre-registration), then more buckets, then the better reference window
+  selection_sort: [has_b4_desc, split_test_first, n_buckets_desc, ref_score_desc, speaker_key]
+
+sources:
+  manifests: [data/manifests/dev.jsonl, data/manifests/test.jsonl]
+  spk_emb_cache: data/manifests/spk_emb.npz     # campplus per-segment embeddings (A1)
+  voice_clusters: data/manifests/voice_clusters.json
+  split_channels: data/manifests/split_channels.json
+  leakage: reports/leakage_raw.json
+  # The sealed hidden set stays untouched: none of its segments may provide a robust
+  # text or a robust reference window.  Read at build time, never hard-coded.
+  exclude_sample_ids_of: data/benchmark/hidden.jsonl
+
+reference_clip:
+  # PLAN §8 QC via src/eval/make_references.py, window length per the E8 prereg.
+  min_dur_sec: 5.0
+  max_dur_sec: 10.0
+  # make_references uses min_words=15 for its 8-15 s window; scaled to the mandated
+  # 5-10 s window (15 * 5/8 = 9.4 -> 10).  This is the length filter only; no QC gate
+  # (SNR, silence, clipping, loop, F0, ASR agreement, speaker material) is changed.
+  min_words: 10
+  min_agreement: 0.95
+  top_per_speaker: 5
+  out_dir: data/references/robust
+  # hard gates = make_references.GATE verbatim (incl. min_speaker_segments 3 and
+  # min_speaker_total_sec 600); watch-listed and voice-leakage-flagged speaker_keys are
+  # excluded exactly as make_references does by default.  Gender is recorded with the
+  # A5 heuristic but is NOT a selection axis here (E8 selects 20 voices for speaker
+  # robustness, not 2 per gender), so `ambiguous` does not bar a voice.
+  gender_gate: none
+
+texts:
+  # per voice: up to 1 text per bucket B0-B4, bucket = HUMAN duration of the cut
+  # measured from the frozen prefix start; prefix_start rule, cut-nearest-centre rule,
+  # disfluency cleaning, charset S1 and the lenient normalizer are the pilot's frozen
+  # pipeline, reused by import.  Texts are INDEPENDENT (no nested-prefix requirement,
+  # E8 prereg) and every text is generated ONLY with its own voice.
+  unit_min_asr_consistency: 90       # = pilot dataset_roots.min_asr_consistency
+  require_single_speaker: true
+  bucket_order_for_assignment: [B4, B3, B2, B1, B0]  # scarce buckets pick their unit first
+  unit_rank: [prefer_unused_unit, filler_density, sample_id]
+  # Charset granularity: the pilot rejects a ROOT whose whole 12-min window contains a
+  # digit or an unknown Latin token; here the same check is applied to the emitted TEXT
+  # (the prefix up to the cut), so a digit at minute 9 disqualifies the B4 cut of that
+  # unit but not its B0-B3 cuts.  Every emitted text still satisfies charset S1 exactly
+  # (asserted by tests/test_robust_benchmark.py).  A cut whose finalized prefix still
+  # hits the frozen disfluency filter (a dangler re-exposed by cutting between an
+  # edit and its continuation) is likewise skipped for the next-nearest boundary.
+  charset_check: per_text
+  # the reference clip's segment provides NO benchmark text of that voice
+  reference_unit_never_in_texts: true
+
+leakage_check:
+  # same machinery as src/data/leakage_check.py (8-word shingles, Jaccard), applied to
+  # every robust text against BOTH training text fields, both sides through the frozen
+  # lenient normalizer so ROVER (lowercase) and e2e (cased, punctuated) text compare on
+  # one token stream.
+  shingle_n: 8
+  max_jaccard: 0.05
+  against: [data/manifests/train_long.jsonl, data/manifests/train_short.jsonl]
+  fields: [text, text_e2e]
+  normalize: lenient

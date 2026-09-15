@@ -1,0 +1,72 @@
+# Frozen VoxCPM2 baseline configuration (A22-voxcpm, 2026-09-02). E12 prereg,
+# reports/decisions.md 2026-09-01. Every value below was read from the pinned snapshot /
+# the upstream repo; citations in src/adapters/voxcpm.py. Do not edit without a
+# decisions.md entry.
+
+model:
+  model_id: openbmb/VoxCPM2
+  model_revision: 32279effe8c19989596f05d353d1447f51d9e915     # prereg E12 pinned base
+  model_dir: models/voxcpm2
+  upstream_root: third_party/VoxCPM                  # OpenBMB/VoxCPM @ f5a1c6a6b901bc732e20f0d59a369f6829ad717a
+  venv_python: third_party/VoxCPM/.venv/bin/python   # uv sync --frozen (upstream uv.lock; py3.12.13, torch 2.10.0+cu128)
+  weights: base
+  dtype: bfloat16              # config.json "dtype"; training-mode master weights stay fp32
+  optimize: true               # torch.compile(reduce-overhead) on the 4 hot modules
+                               # (voxcpm2.py:279-300); determinism proven WITH it (P1)
+  max_cache_length: 8192       # config.json max_length == StaticKVCache positions for
+                               # prefill+generation together (the model HARD limit;
+                               # cache.py:34-40 raises "KV cache is full" past it)
+  patch_size: 4                # config.json; 1 LM position = 4 AudioVAE frames
+  codec_frame_hz: 6.25         # 16000 / hop 640 / patch 4 (audio_vae encoder_rates [2,5,8,8])
+  samples_per_patch: 7680      # 4 x 1920 @ 48 kHz (decoder_rates [8,6,5,2,2,2])
+  sample_rate: 48000           # audio_vae_config.out_sample_rate (evaluator ingests 48 kHz
+                               # natively: src/eval/asr_gigaam.py NATIVE_SAMPLE_RATES)
+  encode_sample_rate: 16000    # audio_vae_config.sample_rate (prompt encoding path)
+
+# Stock inference knobs, frozen from the snapshot's config.json + upstream code defaults
+# (no generation_config.json exists for VoxCPM); asserted equal at load time
+# (voxcpm.check_generate_defaults). The adapter passes ONLY max_len (and the frozen
+# timesteps/cfg below) explicitly.
+generation:
+  cloning: ultimate            # prompt_wav_path + prompt_text (README.md:180-192), cache
+                               # mode 'continuation': the model continues the reference
+                               # audio (mirror of CosyVoice zero-shot / Qwen ICL clone).
+                               # The optional reference_wav_path extra is NOT used (prereg
+                               # E12 names prompt_wav+prompt_text only).
+  inference_timesteps: 10      # core.py:191 default (LocDiT flow-matching steps per patch)
+  cfg_value: 2.0               # core.py:189 default == config.json dit.cfm.inference_cfg_rate
+  normalize: false             # benchmark texts go in verbatim (whitespace collapse only,
+                               # core.py:246-247 applied identically by the adapter)
+  denoise: false               # ZipEnhancer denoiser not loaded at all (clean refs; other
+                               # arms do not denoise either)
+  retry_badcase: false         # STOCK DEVIATION (documented per manifest): stock True
+                               # REgenerates the whole trajectory with seed+1 on
+                               # audio/text ratio > 6 (voxcpm2.py:940-978) and would mask
+                               # the runaway failure mode this study measures; prereg E12
+                               # demands one item = ONE trajectory
+  retry_badcase_ratio_threshold: 1000000.0   # neutralises the hidden text-proportional cap
+                               # max_len=min(int(n_text_tokens*thr+10), max_len)
+                               # (voxcpm2.py:950) so OUR caps below are the only ones
+  model_default_max_len: 4096  # core.py:192 shipped DEFAULT cap (= 655 s at 6.25 Hz), NOT a
+                               # model limit; the adapter overrides it per item
+  watchdog:
+    enabled: true
+    max_generated_tokens: 7500         # operational cap = 20 min of speech at 6.25 Hz (> 15 min
+                                       # study ceiling; mirrors cosyvoice3_base.yaml 30000 @ 25 Hz
+                                       # and qwen3tts_base.yaml 15000 @ 12.5 Hz); hitting it = loop_cap
+    max_wall_seconds: null             # recorded only: the upstream loop is atomic, no in-flight
+                                       # interruption (same documented deviation as the Qwen adapter)
+    enforce_context_budget: true       # max_len <= 8192 - margin - measured prefill (tokens of
+                                       # prompt_text+target_text + 1 audio_start + prompt latent
+                                       # patches); hitting that bound = context_limit
+    context_safety_margin_tokens: 8
+    expected_tokens_per_text_token: 1.0  # only for the length_hint field (~6.25 Hz / ~6.5 text tok/s)
+
+seeds: [0]
+
+output:
+  sample_rate: 48000
+  wav_subtype: PCM_16
+  never_overwrite: true
+  save_generated_token_ids: false      # VoxCPM is tokenizer-free: continuous latents, no
+                                       # discrete audio tokens to dump

@@ -1,0 +1,100 @@
+{
+  "experiment_prefix": "EXPANDED_20260913",
+  "seed": 0,
+  "arms": [
+    {
+      "id": "cosy_base",
+      "family": "cosy",
+      "mode": "native",
+      "weights": "llm.pt"
+    },
+    {
+      "id": "cosy_short",
+      "family": "cosy",
+      "mode": "native",
+      "weights": "external/rulongtts_models_backup/exp/short/pilot/epoch_3_step_3001.pt"
+    },
+    {
+      "id": "cosy_long",
+      "family": "cosy",
+      "mode": "native",
+      "weights": "external/rulongtts_models_backup/exp/long/pilot/epoch_3_step_3001.pt"
+    },
+    {
+      "id": "cosy_long_punct",
+      "family": "cosy",
+      "mode": "native",
+      "weights": "external/rulongtts_models_backup/exp/punct/punct/epoch_3_step_3001.pt"
+    },
+    {
+      "id": "qwen_base",
+      "family": "qwen",
+      "mode": "native",
+      "weights": null
+    },
+    {
+      "id": "qwen_short",
+      "family": "qwen",
+      "mode": "native",
+      "weights": "external/rulongtts_models_backup/exp/qwen/qe2p"
+    },
+    {
+      "id": "qwen_long",
+      "family": "qwen",
+      "mode": "native",
+      "weights": "external/rulongtts_models_backup/exp/qwen/qe3p"
+    },
+    {
+      "id": "vox_base",
+      "family": "vox",
+      "mode": "native",
+      "weights": null
+    },
+    {
+      "id": "vox_short",
+      "family": "vox",
+      "mode": "native",
+      "weights": "exp/voxcpm/vce2p/step_0001185"
+    },
+    {
+      "id": "vox_long",
+      "family": "vox",
+      "mode": "native",
+      "weights": "exp/voxcpm/vce3p/step_0001139"
+    },
+    {
+      "id": "f5_base",
+      "family": "f5",
+      "mode": "uninterrupted",
+      "weights": "models/f5/russian/F5TTS_v1_Base/model_240000_inference.safetensors"
+    },
+    {
+      "id": "f5_short",
+      "family": "f5",
+      "mode": "uninterrupted",
+      "weights": "checkpoints/f5/short_ema/final.pt"
+    },
+    {
+      "id": "f5_long",
+      "family": "f5",
+      "mode": "uninterrupted",
+      "weights": "checkpoints/f5/long_ema/final.pt"
+    }
+  ],
+  "note": "Weight inventory for the 13 published conditions; paths identify archived, non-bundled checkpoints. Per-attempt generation manifests record the effective inference settings.",
+  "watchdog_overrides": {
+    "cosy": {
+      "max_tokens": 30000,
+      "max_wall_seconds": 2400
+    },
+    "qwen": {
+      "max_tokens": 15000
+    },
+    "vox": {
+      "max_tokens": 7500
+    },
+    "f5": {
+      "max_duration_seconds": 1230
+    }
+  }
+}

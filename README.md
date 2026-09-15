@@ -4,6 +4,8 @@ Code and review artifacts for the Balalaika-longform long-form Russian TTS study
 
 The study asks whether adapting a TTS model on continuous recordings helps it finish long passages. The dataset provides long recordings and matched short-window training views. The experiments compare these views in CosyVoice3, Qwen3-TTS, VoxCPM2, and F5-TTS. The results support improvements for the autoregressive systems under the measured conditions; F5-TTS remains poor on long passages.
 
+**Paper:** [PDF](paper/main.pdf) · [LaTeX source and build instructions](paper/README.md).
+
 **Start here:** [inspect the main results](artifacts/published50/report/main_b4.md), or regenerate the tables and figures below.
 
 ## Reproduce the reported results on CPU

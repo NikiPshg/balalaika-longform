@@ -2,6 +2,7 @@
 
 | Paper component | Frozen source | Reproduction |
 | --- | --- | --- |
+| Manuscript PDFs | `paper/main.tex`, bibliography, styles and two figure PDFs | `python paper/build.py` rebuilds both PDF variants |
 | Corpus split table | `data/frozen_manifests/{train_long,dev,test}.jsonl.gz` | `scripts/reproduce.py` sums counts, source videos and seconds |
 | Two-reference CosyVoice table | `artifacts/two_voice/*.jsonl` | Recomputes mean WER and completion rates for all 60 attempts per arm |
 | Main model table and WER figure | `artifacts/published50/results/*/per_item.jsonl` | Recomputes the 650-attempt analysis and compares every published cell and interval |

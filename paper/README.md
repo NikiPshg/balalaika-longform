@@ -7,7 +7,7 @@ This folder contains the source and assets used for the supplied `main.pdf` and 
 | `main.tex` | Complete manuscript: text, tables, captions and citations |
 | `refs.bib` | Bibliography |
 | `spconf.sty`, `IEEEbib.bst` | ICASSP formatting and bibliography style |
-| `fig_wer_limited50_wide.pdf` | WER figure |
+| `fig_wer_limited50_wide.pdf` | WER-by-length figure; not used in the current manuscript (its data is in Table 3), kept because `build.py` copies it |
 | `fig_quality_limited50.pdf` | Windowed quality and speaker-similarity figure |
 | `main.pdf` | Current working-draft PDF snapshot |
 | `submission-preview.pdf` | Current PDF snapshot with working-draft blocks hidden |
@@ -33,6 +33,4 @@ For Overleaf, upload this folder's files and select `main.tex` as the main docum
 
 ## PDF variants
 
-`main.tex` contains `\workingdrafttrue`. The main snapshot therefore retains the working-draft blocks. The build script creates the submission preview by replacing that switch with `\workingdraftfalse` in a temporary copy. Both variants come from the same manuscript; edit `main.tex` when updating the paper.
-
-These files preserve the current manuscript exactly, including its anonymous author/affiliation fields and the dataset URL placeholder. The preview switch only controls the working-draft blocks. It does not fill those fields or update the paper text.
+`build.py` produces `main.pdf` and `submission-preview.pdf` from the single `main.tex` by flipping the `\workingdrafttrue` switch in a temporary copy. The manuscript currently contains no working-draft blocks, so the two PDFs have the same content. Edit `main.tex` when updating the paper; the dataset and code links are the `\datasetlink` and `\codelink` macros near the top of that file.
